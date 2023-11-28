@@ -27,17 +27,24 @@ let rec analyse_tds_expression tds e =
     begin
       
         match chercherGlobalement tds s with
-        |Some info ->
-          let n1 = List.map (analyse_tds_expression tds) ne in
-          AstTds.AppelFonction(info, n1)
+        |Some info ->(
+          match info_ast_to_info info with
+          |InfoFun _ -> 
+            let n1 = List.map (analyse_tds_expression tds) ne in
+            AstTds.AppelFonction(info, n1)
+          | _  -> raise (MauvaiseUtilisationIdentifiant s))
         |None ->
           raise(IdentifiantNonDeclare s)
     end
   |AstSyntax.Ident (s) ->
     begin
       match chercherGlobalement tds s with
-      |Some info ->
-        AstTds.Ident(info)
+      |Some info ->(
+          match info_ast_to_info info with
+          |InfoVar _ -> 
+            AstTds.Ident(info)
+          |InfoFun _ -> raise (MauvaiseUtilisationIdentifiant s)
+          |InfoConst (_,e) -> AstTds.Entier(e))
       |None ->
         raise(IdentifiantNonDeclare s)
     end
@@ -182,12 +189,15 @@ and analyse_tds_bloc tds oia li =
    nli
 
 (* Fonction auxiliaire parmettant de traiter les couples lp*)
-let traite_p tds (t,s) =
-  match chercherGlobalement tds s with
-  |Some info ->
-    (t,info)
-  |None -> 
-    raise(IdentifiantNonDeclare s)
+let rec traite_p tds lp =
+  match lp with
+  |[] -> []
+  |(t,t2)::qlp -> match chercherLocalement tds t2 with 
+                |None -> let info = InfoVar (t2,Undefined, 0, "") in
+                        let ia = info_to_info_ast info in
+                        ajouter tds t2 ia;
+                        (t, ia) :: traite_p tds qlp
+                |Some _ -> raise(DoubleDeclaration t2)
 
 (* analyse_tds_fonction : tds -> AstSyntax.fonction -> AstTds.fonction *)
 (* Paramètre tds : la table des symboles courante *)
@@ -196,14 +206,21 @@ let traite_p tds (t,s) =
 en une fonction de type AstTds.fonction *)
 (* Erreur si mauvaise utilisation des identifiants *)
 let analyse_tds_fonction maintds (AstSyntax.Fonction(t,n,lp,li))  =
-  match chercherGlobalement maintds n with
-  |Some info ->
-    let nb = analyse_tds_bloc maintds None li in
-    (*fonction aux pr traiter un param *)
-    let b = (List.map (traite_p maintds) lp) in
-      AstTds.Fonction(t, info, b, nb) 
+  match chercherLocalement maintds n with
+  |Some _ -> 
+    raise(DoubleDeclaration n)
   |None -> 
-    raise(IdentifiantNonDeclare n)
+    let tdsF = creerTDSFille maintds in
+    (* Création de l'information associée à l'identfiant *)
+    let info = InfoFun (n,t, List.map fst lp) in
+    (* Création du pointeur sur l'information *)
+    let ia = info_to_info_ast info in
+    (* Ajout de l'information (pointeur) dans la tds *)
+    ajouter maintds n ia;
+    (*fonction aux pr traiter un param *)
+    let b = traite_p tdsF lp in
+    let nb = analyse_tds_bloc tdsF (Some ia) li in
+    AstTds.Fonction(t, ia, b, nb) 
 
 
 
