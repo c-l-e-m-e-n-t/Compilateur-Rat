@@ -6,8 +6,7 @@ open Ast
 open Type
 
 type t1 = Ast.AstTds.programme
-type t2 = Ast.AstType.programme
-
+type t2 = Ast.AstType.programme  
 
 let rec analyse_type_expression e = 
 match e with 
@@ -17,13 +16,13 @@ match e with
     let(ne2, t2) = analyse_type_expression e2 in
     match t1,b,t2 with 
     |Int, Plus, Int -> ((AstType.Binaire (PlusInt,ne1, ne2)), Int) 
-    |Int, Equ, Int -> ((AstType.Binaire (EquInt,ne1, ne2)), Int) 
+    |Int, Equ, Int -> ((AstType.Binaire (EquInt,ne1, ne2)), Bool) 
     |Bool, Equ, Bool -> ((AstType.Binaire (EquBool,ne1, ne2)), Bool) 
     |Int, Mult, Int -> ((AstType.Binaire (MultInt,ne1, ne2)), Int) 
     |Rat, Mult, Rat -> ((AstType.Binaire (MultRat,ne1, ne2)), Rat) 
     |Rat, Plus, Rat -> ((AstType.Binaire (PlusRat,ne1, ne2)), Rat) 
-    |Int, Fraction, Int -> ((AstType.Binaire (Fraction,ne1, ne2)), Int) 
-    |Int, Inf, Int -> ((AstType.Binaire (MultRat,ne1, ne2)), Int) 
+    |Int, Fraction, Int -> ((AstType.Binaire (Fraction,ne1, ne2)), Rat) 
+    |Int, Inf, Int -> ((AstType.Binaire (Inf,ne1, ne2)), Bool) 
     |_ -> raise (TypeBinaireInattendu (b, t1, t2))
     end
 
@@ -48,19 +47,18 @@ match e with
         end
       | _ -> raise(TypeInattendu (te, Rat))
     end
-  | _ -> failwith "todo : faire les fonctions"
-  (*
+  
   |AstTds.AppelFonction (infoast, le) ->
-    
-    let tr = getRetour info in 
-    let tp = getTypeParam info in
+    let tr = getType infoast in 
+    let tp = getTypeParam infoast in
     let l = List.map analyse_type_expression le in
     let mle = List.map fst l in
     let lt = List.map snd l in
-    if est_compatible tp lt then
-        (AstType.AppelFonction(nle, info), tr) 
-    else raise(TypeInattendu lt)
-  | _ -> failwith "todo"*)
+    if est_compatible_list tp lt then
+      (AstType.AppelFonction(infoast, mle), tr) 
+    else 
+      raise(TypesParametresInattendus (tp, lt))
+
 
 let rec analyse_type_instruction i = 
   match i with 
@@ -105,19 +103,32 @@ let rec analyse_type_instruction i =
     else raise(TypeInattendu (te, Bool))
   
   |Retour (e, i) ->
-    let(ne, _) = analyse_type_expression e in
+    let(ne, te) = analyse_type_expression e in
+    if est_compatible te (getType i) then
       AstType.Retour (ne,i)
+    else 
+      raise(TypeInattendu (te, getType i))
 
   |Empty -> AstType.Empty
 
 and analyse_type_bloc li =
   List.map analyse_type_instruction li 
 
-let analyse_type_fonction f = failwith "todo"
+let recup_info l = 
+  List.map snd l
 
-let analyser programme =
-  (*List.map analyse_type_fonction*)
-  analyse_type_bloc programme
+let sub_modifier_type_variable (t, info) = 
+  modifier_type_variable t info
+
+let analyse_type_fonction (AstTds.Fonction (t, infoast, lp, corps)) = 
+    match info_ast_to_info infoast with
+    |InfoFun _ -> 
+      let _ = modifier_type_fonction t (List.map fst lp) infoast in 
+      let _ = List.map sub_modifier_type_variable lp in
+      let infol = recup_info lp in
+      let nb = analyse_type_bloc corps in
+      AstType.Fonction (infoast, infol, nb)
+    |_ -> failwith "Erreur interne"
 
   let analyser (AstTds.Programme (fonctions,prog)) =
     let nf = List.map analyse_type_fonction fonctions in

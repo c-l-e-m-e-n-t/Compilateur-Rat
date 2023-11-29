@@ -346,10 +346,17 @@ let%test _ =
   | InfoVar ("x", Rat, 10 , "LB") -> true
   | _ -> false
     
-(*Retoutne le Type*)
+(*Retourne le Type*)
 let getType infoAst =
   let info = info_ast_to_info infoAst in
   match info with 
   | InfoVar (_,t, _, _) -> t
   | InfoFun (_,t, _) -> t
   | InfoConst _ -> Int
+
+(*retourne la liste des types des parametres*)
+let getTypeParam infoAst =
+  let info = info_ast_to_info infoAst in
+  match info with
+  | InfoFun (_,_,l) -> l
+  | _ -> []

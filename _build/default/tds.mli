@@ -64,3 +64,6 @@ val modifier_adresse_variable : int -> string -> info_ast -> unit
 
 (* Retourne le type d'une info ast*)
 val getType : info_ast -> typ
+
+(* Retourne le type d'une liste d'info ast*)
+val getTypeParam : info_ast -> typ list
