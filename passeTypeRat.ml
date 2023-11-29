@@ -36,26 +36,28 @@ match e with
   |AstTds.Ident (id) -> 
     (AstType.Ident id, getType id) 
 
-    (*
   |AstTds.Unaire (un, exp) ->  
-    let(ne, ty) = analyse_type_expression exp in
+    let(ne, te) = analyse_type_expression exp in
     begin
-      match ty with
-      |Rat -> (AstType.Unaire (un, ne), Int) 
-      | _ -> raise(TypeInattendu (ty, Rat))
-    end*)
-
+      match te with
+      |Rat -> 
+        begin
+          match un with
+          |Numerateur -> (AstType.Unaire (Numerateur, ne), Int) 
+          |Denominateur -> (AstType.Unaire (Denominateur, ne), Int)
+        end
+      | _ -> raise(TypeInattendu (te, Rat))
+    end
   | _ -> failwith "todo : faire les fonctions"
   (*
-  |AstTds.AppelFonction (info, le) ->
+  |AstTds.AppelFonction (infoast, le) ->
     
     let tr = getRetour info in 
     let tp = getTypeParam info in
     let l = List.map analyse_type_expression le in
     let mle = List.map fst l in
     let lt = List.map snd l in
-    if 
-      EstCompatible tp lt then
+    if est_compatible tp lt then
         (AstType.AppelFonction(nle, info), tr) 
     else raise(TypeInattendu lt)
   | _ -> failwith "todo"*)
@@ -72,17 +74,17 @@ let rec analyse_type_instruction i =
     |ti -> raise(TypeInattendu (ti, te))
     end
 
-  |AstTds.Declaration (ty, info, e) -> 
+  |AstTds.Declaration (t, infoast, e) -> 
     let(ne, te) = analyse_type_expression e in 
-    if est_compatible ty te then
-      AstType.Declaration(info, ne) 
+    if est_compatible t te then
+      let _ = modifier_type_variable te infoast in
+      AstType.Declaration(infoast, ne) 
     else 
-      raise(TypeInattendu (te, ty))
-  | _ -> failwith "todo"
+      raise(TypeInattendu (te, t))
   
   |AstTds.Affectation (info, e) -> 
     let (ne, te)= analyse_type_expression e in 
-    let ti =getType info in
+    let ti = getType info in
     if est_compatible ti te then
       AstType.Affectation (info, ne)
     else raise(TypeInattendu (te, ti))
@@ -94,14 +96,30 @@ let rec analyse_type_instruction i =
       let nb2 = analyse_type_bloc b2 in
       AstType.Conditionnelle (nc, nb1, nb2)
     else raise(TypeInattendu (tc, Bool))
-    
-    |Empty -> AstType.Empty
+   
+  |TantQue (e, b)-> 
+    let(ne, te) = analyse_type_expression e in
+    if est_compatible te Bool then
+      let nb = analyse_type_bloc b in
+      AstType.TantQue (ne,nb)
+    else raise(TypeInattendu (te, Bool))
+  
+  |Retour (e, i) ->
+    let(ne, _) = analyse_type_expression e in
+      AstType.Retour (ne,i)
 
+  |Empty -> AstType.Empty
 
-and analyse_type_bloc li = 
+and analyse_type_bloc li =
   List.map analyse_type_instruction li 
+
+let analyse_type_fonction f = failwith "todo"
 
 let analyser programme =
   (*List.map analyse_type_fonction*)
   analyse_type_bloc programme
 
+  let analyser (AstTds.Programme (fonctions,prog)) =
+    let nf = List.map analyse_type_fonction fonctions in
+    let nb = analyse_type_bloc prog in
+    AstType.Programme (nf, nb)
