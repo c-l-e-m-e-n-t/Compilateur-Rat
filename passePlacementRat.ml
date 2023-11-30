@@ -2,7 +2,6 @@
 (* doit être conforme à l'interface Passe *)
 
 open Tds
-open Exceptions
 open Ast
 open Type
 open AstPlacement
@@ -13,7 +12,7 @@ type t2 = Ast.AstPlacement.programme
 
 let get_Taille t = 
   match t with
- |Declaration (info, e) -> getTaille (getType info)
+ |Declaration (info, _) -> getTaille (getType info)
  | _ -> 0   
 
 let rec analyse_placement_instruction i depl reg =
@@ -33,16 +32,16 @@ let rec analyse_placement_instruction i depl reg =
   |AstType.TantQue (e,b) ->
     let il = analyse_placement_bloc b depl reg in
     AstPlacement.TantQue (e,il),0
-    (*
+    
   |AstType.Retour (e, info_ast) -> 
     begin
     match info_ast_to_info info_ast with
     |InfoFun (_, tr, tp) ->
       let tailleTr = getTaille tr in
-      let tailleTp = List.fold_right + tp in
+      let tailleTp = List.fold_left (fun acc t -> acc + getTaille t) 0 tp in
       AstPlacement.Retour (e, tailleTr, tailleTp),0
     | _  -> failwith ("pas une info fun")
-    end*)
+    end
   | _ -> failwith("pas encore fait") 
 
 and analyse_placement_bloc li depl reg = 
@@ -59,7 +58,7 @@ let rec analyse_placement_parametres depl li =
     let t = getTaille( getType info_ast) in
     modifier_adresse_variable (depl-t) "LB" info_ast;
     info_ast::(analyse_placement_parametres (depl-t) q)
-  | _ -> failwith("aa") 
+  |[] -> [] 
 
 let analyse_placement_fonction (AstType.Fonction(info_ast, infol, instl)) =
   let nb = analyse_placement_bloc instl 3 "LB" in

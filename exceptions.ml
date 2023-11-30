@@ -14,6 +14,3 @@ exception TypeBinaireInattendu of binaire * typ * typ (* les types sont les type
 
 (* Utilisation illégale de return dans le programme principal *)
 exception RetourDansMain
-
-(* Exception pour le placement*)
-exception TypeIndefini of typ
