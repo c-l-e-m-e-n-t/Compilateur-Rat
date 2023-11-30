@@ -114,9 +114,6 @@ let rec analyse_type_instruction i =
 and analyse_type_bloc li =
   List.map analyse_type_instruction li 
 
-let recup_info l = 
-  List.map snd l
-
 let sub_modifier_type_variable (t, info) = 
   modifier_type_variable t info
 
@@ -125,7 +122,7 @@ let analyse_type_fonction (AstTds.Fonction (t, infoast, lp, corps)) =
     |InfoFun _ -> 
       let _ = modifier_type_fonction t (List.map fst lp) infoast in 
       let _ = List.map sub_modifier_type_variable lp in
-      let infol = recup_info lp in
+      let infol = List.map snd lp in
       let nb = analyse_type_bloc corps in
       AstType.Fonction (infoast, infol, nb)
     |_ -> failwith "Erreur interne"
