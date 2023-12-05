@@ -60,10 +60,6 @@ let rec analyse_tds_expression tds e =
       AstTds.Unaire(u, n1)
     end
 
-
-    (* failwith "todo"*)
-
-
 (* analyse_tds_instruction : tds -> info_ast option -> AstSyntax.instruction -> AstTds.instruction *)
 (* Paramètre tds : la table des symboles courante *)
 (* Paramètre oia : None si l'instruction i est dans le bloc principal,

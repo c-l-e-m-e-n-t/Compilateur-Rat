@@ -1,6 +1,5 @@
 (* Module de la passe de placement *)
 (* doit être conforme à l'interface Passe *)
-
 open Tds
 open Ast
 open Type
@@ -9,12 +8,21 @@ open AstPlacement
 type t1 = Ast.AstType.programme
 type t2 = Ast.AstPlacement.programme
 
-
-let get_Taille t = 
-  match t with
+(* get_Taille : instruction -> Int *)
+(* Paramètre i : une instruction *)
+(* Renvoi la taille d'une instruction *)
+(* Renvoi 0 si ce n'est pas un déclaration *)
+let get_Taille i = 
+  match i with
  |Declaration (info, _) -> getTaille (getType info)
  | _ -> 0   
 
+
+(* analyse_placement_instruction : instruction -> Int -> String -> Instruction*Int *)
+(* Paramètre i : une instruction *)
+(* Paramètre depl : un integer symbolisant le déplacement *)
+(* Paramètre reg : le registre a utiliser *)
+(* Renvoi une instruction ainsi que la taille qu'elle prends*)
 let rec analyse_placement_instruction i depl reg =
   match i with
   |AstType.Declaration (info_ast, e) ->
@@ -32,7 +40,6 @@ let rec analyse_placement_instruction i depl reg =
   |AstType.TantQue (e,b) ->
     let il = analyse_placement_bloc b depl reg in
     AstPlacement.TantQue (e,il),0
-    
   |AstType.Retour (e, info_ast) -> 
     begin
     match info_ast_to_info info_ast with
@@ -42,8 +49,23 @@ let rec analyse_placement_instruction i depl reg =
       AstPlacement.Retour (e, tailleTr, tailleTp),0
     | _  -> failwith ("pas une info fun")
     end
+  |AstType.Affectation (info, e) -> 
+    (AstPlacement.Affectation(info, e), 0)
+  |AstType.AffichageBool  e -> 
+    (AstPlacement.AffichageBool e, 0)
+  |AstType.AffichageInt e -> 
+    (AstPlacement.AffichageInt e, 0)
+  |AstType.AffichageRat e -> 
+    (AstPlacement.AffichageRat e, 0)
+
+  
   | _ -> failwith("pas encore fait") 
 
+(* analyse_placement_bloc : instruction list -> Int -> String -> bloc *)
+(* Paramètre li : une liste d'instructions *)
+(* Paramètre depl : un integer symbolisant le déplacement *)
+(* Paramètre reg : le registre a utiliser *)
+(* Renvoi un bloc*)
 and analyse_placement_bloc li depl reg = 
   match li with
   |t::q -> 
@@ -52,6 +74,10 @@ and analyse_placement_bloc li depl reg =
     nt::nq,tailleT+tailleQ
   |[] -> [],0
 
+(* analyse_placement_parametres : Int -> Info_ast list -> Info_ast list *)
+(* Paramètre depl : un integer symbolisant le déplacement *)
+(* Paramètre li : une liste d'instructions *)
+(* Renvoi le placement des paramètres d'une liste d'info_ast*)
 let rec analyse_placement_parametres depl li =
   match li with
   | info_ast::q -> 
@@ -60,12 +86,18 @@ let rec analyse_placement_parametres depl li =
     info_ast::(analyse_placement_parametres (depl-t) q)
   |[] -> [] 
 
+(* analyse_placement_fonction : Fonction ->  Fonction *)
+(* Paramètre f : une fonction *)
+(* Renvoi le placement d'une fonction*)
 let analyse_placement_fonction (AstType.Fonction(info_ast, infol, instl)) =
   let nb = analyse_placement_bloc instl 3 "LB" in
   let nlp = analyse_placement_parametres 0 (List.rev infol) in
   AstPlacement.Fonction (info_ast, nlp, nb)
 
-
+(* analyser : Ast.AstType.programme -> Ast.AstPlacement.programme *)
+(* Paramètre lf : la liste des fonction du programme *)
+(* Paramètre li : b le bloc principal du programme *)
+(* Renvoi le placement des différents instruction du programme pour du code TAM*)
 let analyser  (AstType.Programme (lf, b)) =
   let mlf = List.map analyse_placement_fonction lf in 
   let mb  = analyse_placement_bloc b 0 "SB" in

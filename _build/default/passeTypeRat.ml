@@ -8,12 +8,18 @@ open Type
 type t1 = Ast.AstTds.programme
 type t2 = Ast.AstType.programme  
 
+(* analyse_type_expression : AstTds.expression -> AstType.expression*typ *)
+(* Paramètre e : une expression*)
+(* Vérifie la bonne utilisation des types dans les expressions *)
+(* Erreurs si types binaires inattendus, types inattendus ou types paramètres inattendus *)
 let rec analyse_type_expression e = 
 match e with 
   |AstTds.Binaire (b,e1,e2) -> 
     begin
+    (* On analyse les expressions 1 et 2*)
     let(ne1, t1) = analyse_type_expression e1 in
     let(ne2, t2) = analyse_type_expression e2 in
+    (* On regarde si le binaire et les expressions on bien des types qui correspondent et qui sont autorisées dans notre language*)
     match t1,b,t2 with 
     |Int, Plus, Int -> ((AstType.Binaire (PlusInt,ne1, ne2)), Int) 
     |Int, Equ, Int -> ((AstType.Binaire (EquInt,ne1, ne2)), Bool) 
@@ -27,12 +33,18 @@ match e with
     end
 
   |AstTds.Booleen (b) ->
+    (* Verification de l'utilisation du bon type dans l'expression *)
+    (* Obtention de l'expression transformée *)
     (AstType.Booleen(b), Bool)
   
   |AstTds.Entier (ent) ->
+    (* Verification de l'utilisation du bon type dans l'expression *)
+    (* Obtention de l'expression transformée *)
     (AstType.Entier ent, Int)
 
   |AstTds.Ident (id) -> 
+    (* Verification de l'utilisation du bon type dans l'expression *)
+    (* Obtention de l'expression transformée *)
     (AstType.Ident id, getType id) 
 
   |AstTds.Unaire (un, exp) ->  
@@ -60,6 +72,10 @@ match e with
       raise(TypesParametresInattendus (tp, lt))
 
 
+(* analyse_type_instruction : AstTds.instruction -> AstType.instruction *)
+(* Paramètre i : une instruction*)
+(* Vérifie la bonne utilisation des types dans les instructions *)
+(* Erreurs si on a des types inattendus *)
 let rec analyse_type_instruction i = 
   match i with 
   |AstTds.Affichage e -> 
@@ -111,12 +127,24 @@ let rec analyse_type_instruction i =
 
   |Empty -> AstType.Empty
 
+(* analyse_type_bloc : AstTds.bloc -> AstType.bloc *)
+(* Paramètre li : une instruction list*)
+(* Vérifie la bonne utilisation des types dans les blocs en analysant toutes les instructions du bloc*)
 and analyse_type_bloc li =
   List.map analyse_type_instruction li 
 
+
+(* sub_modifier_type_variable : typ*Info_ast -> unit *)
+(* Paramètre t : un type*)
+(* Paramètre info : une info ast *)
+(* Sous-fonction permettant de modifier le type d'ine variable afin de faviliter l'utilisation d'un map *)
 let sub_modifier_type_variable (t, info) = 
   modifier_type_variable t info
 
+(* analyse_type_fonction : AstTds.fonction -> AstType.fonction *)
+(* Paramètre * : une fonction*)
+(* Vérifie la bonne utilisation des types dans une fonction*)
+(* Fail si on a autre chose qu'une InfoFun (normalement impossible) *)
 let analyse_type_fonction (AstTds.Fonction (t, infoast, lp, corps)) = 
     match info_ast_to_info infoast with
     |InfoFun _ -> 
@@ -127,7 +155,11 @@ let analyse_type_fonction (AstTds.Fonction (t, infoast, lp, corps)) =
       AstType.Fonction (infoast, infol, nb)
     |_ -> failwith "Erreur interne"
 
-  let analyser (AstTds.Programme (fonctions,prog)) =
-    let nf = List.map analyse_type_fonction fonctions in
-    let nb = analyse_type_bloc prog in
-    AstType.Programme (nf, nb)
+(* analyser : AstTds.programme -> AstType.programme *)
+(* Paramètre nf : une liste de fonctions *)
+(* Paramètre nb : le bloc principal du programme *)
+(* Vérifie la bonne utilisation des types dans un programme*)
+let analyser (AstTds.Programme (fonctions,prog)) =
+  let nf = List.map analyse_type_fonction fonctions in
+  let nb = analyse_type_bloc prog in
+  AstType.Programme (nf, nb)
