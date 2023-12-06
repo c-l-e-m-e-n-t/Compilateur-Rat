@@ -22,7 +22,7 @@ let get_Taille i =
 (* Paramètre i : une instruction *)
 (* Paramètre depl : un integer symbolisant le déplacement *)
 (* Paramètre reg : le registre a utiliser *)
-(* Renvoi une instruction ainsi que la taille qu'elle prends*)
+(* Renvoi une instruction ainsi que la taille qu'elle prend*)
 let rec analyse_placement_instruction i depl reg =
   match i with
   |AstType.Declaration (info_ast, e) ->
@@ -57,9 +57,8 @@ let rec analyse_placement_instruction i depl reg =
     (AstPlacement.AffichageInt e, 0)
   |AstType.AffichageRat e -> 
     (AstPlacement.AffichageRat e, 0)
-
-  
-  | _ -> failwith("pas encore fait") 
+  |AstType.Empty ->
+    (AstPlacement.Empty, 0)
 
 (* analyse_placement_bloc : instruction list -> Int -> String -> bloc *)
 (* Paramètre li : une liste d'instructions *)
