@@ -22,6 +22,8 @@ type unaire = Numerateur | Denominateur
 (* Opérateurs binaires de Rat *)
 type binaire = Fraction | Plus | Mult | Equ | Inf
 
+type affectable = Ident of string | Deref of affectable 
+
 (* Expressions de Rat *)
 type expression =
   (* Appel de fonction représenté par le nom de la fonction et la liste des paramètres réels *)
@@ -36,6 +38,18 @@ type expression =
   | Unaire of unaire * expression
   (* Opération binaire représentée par l'opérateur, l'opérande gauche et l'opérande droite *)
   | Binaire of binaire * expression * expression
+  (* Null *)
+  | Null
+  (* New *)
+  | New of typ
+  (* Addr *)
+  | Addr of string
+  (* ** *)
+  | Affectable of affectable
+  (* Affectation d'un pointeur *)
+  | Affectation of affectable 
+
+
 
 (* Instructions de Rat *)
 type bloc = instruction list
@@ -71,6 +85,7 @@ end
 (* ********************************************* *)
 module AstTds =
 struct
+  type affectable = Ident of Tds.info_ast | Deref of affectable 
 
   (* Expressions existantes dans notre langage *)
   (* ~ expression de l'AST syntaxique où les noms des identifiants ont été
@@ -82,6 +97,12 @@ struct
     | Entier of int
     | Unaire of AstSyntax.unaire * expression
     | Binaire of AstSyntax.binaire * expression * expression
+    | Null
+    | New of typ
+    | Addr of Tds.info_ast
+    | Affectable of affectable
+    | Affectation of affectable * expression
+
 
   (* instructions existantes dans notre langage *)
   (* ~ instruction de l'AST syntaxique où les noms des identifiants ont été
@@ -114,6 +135,9 @@ end
 module AstType =
 struct
 
+(* Affectables (pointeurs) *)
+type affectable = Ident of Tds.info_ast | Deref of affectable 
+
 (* Opérateurs unaires de Rat - résolution de la surcharge *)
 type unaire = Numerateur | Denominateur
 
@@ -129,6 +153,11 @@ type expression =
   | Entier of int
   | Unaire of unaire * expression
   | Binaire of binaire * expression * expression
+  | Null
+  | New
+  | Addr of Tds.info_ast
+  | Affectable of affectable 
+  | Affectation of affectable * expression
 
 (* instructions existantes Rat *)
 (* = instruction de AstTds + informations associées aux identificateurs, mises à jour *)
@@ -150,6 +179,8 @@ type fonction = Fonction of Tds.info_ast * Tds.info_ast list * bloc
 
 (* Structure d'un programme dans notre langage *)
 type programme = Programme of fonction list * bloc
+
+
 
 end
 

@@ -59,6 +59,27 @@ let rec analyse_tds_expression tds e =
       let n1 = analyse_tds_expression tds ne in
       AstTds.Unaire(u, n1)
     end
+  |AstSyntax.Affectation a ->
+    failwith ("todo")
+  |AstSyntax.New t -> 
+    failwith ("todo")
+    (*AstTds.Affectation( analyse_tds_affectation aff false tds ) *) 
+  |AstSyntax.Null -> 
+    AstTds.Null
+  |AstSyntax.Addr id ->
+    begin 
+      match Tds.chercherGlobalement tds id with  
+      |Some info -> 
+        begin 
+          match info_ast_to_info info with
+          | InfoVar _ -> AstTds.Addr(info)
+          | _ -> raise (MauvaiseUtilisationIdentifiant id) 
+          end 
+     |None -> 
+        raise (IdentifiantNonDeclare id) 
+    end
+  | _ -> failwith ("cas non traité)") 
+
 
 (* analyse_tds_instruction : tds -> info_ast option -> AstSyntax.instruction -> AstTds.instruction *)
 (* Paramètre tds : la table des symboles courante *)

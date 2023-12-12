@@ -1,5 +1,8 @@
 (* Types manipulés dans Rat *)
-type typ = Bool | Int | Rat | Undefined
+type typ = Bool | Int | Rat | Undefined |Addr of typ | Null 
+
+(* Types manipulés par les pointeurs *)
+type affectable = Ident of string | Deref of affectable 
 
 (* string_of_type :  typ -> string *)
 (* transforme un typ en chaîne de caractère *)
