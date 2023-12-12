@@ -1,4 +1,4 @@
-(*(* Module de la passe de placement *)
+(* Module de la passe de placement *)
 (* doit être conforme à l'interface Passe *)
 open Tds
 open Ast
@@ -17,6 +17,11 @@ let get_Taille i =
  |Declaration (info, _) -> getTaille (getType info)
  | _ -> 0   
 
+
+ let rec analyse_placement_affectable a =
+  match a with
+    |AstType.Ident info -> AstPlacement.Ident(info)
+    |AstType.Deref aff -> analyse_placement_affectable aff
 
 (* analyse_placement_instruction : instruction -> Int -> String -> Instruction*Int *)
 (* Paramètre i : une instruction *)
@@ -49,8 +54,8 @@ let rec analyse_placement_instruction i depl reg =
       AstPlacement.Retour (e, tailleTr, tailleTp),0
     | _  -> failwith ("pas une info fun")
     end
-  |AstType.Affectation (info, e) -> 
-    (AstPlacement.Affectation(info, e), 0)
+  |AstType.Affectation (a, e) -> 
+    (AstPlacement.Affectation(analyse_placement_affectable a, e), 0)
   |AstType.AffichageBool  e -> 
     (AstPlacement.AffichageBool e, 0)
   |AstType.AffichageInt e -> 
@@ -100,4 +105,4 @@ let analyse_placement_fonction (AstType.Fonction(info_ast, infol, instl)) =
 let analyser  (AstType.Programme (lf, b)) =
   let mlf = List.map analyse_placement_fonction lf in 
   let mb  = analyse_placement_bloc b 0 "SB" in
-  AstPlacement.Programme (mlf,mb)*)
+  AstPlacement.Programme (mlf,mb)
