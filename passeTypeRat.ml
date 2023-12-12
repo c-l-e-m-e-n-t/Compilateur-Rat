@@ -1,4 +1,4 @@
-(*(* Module de la passe de gestion des types *)
+(* Module de la passe de gestion des types *)
 (* doit être conforme à l'interface Passe *)
 open Tds
 open Exceptions
@@ -10,7 +10,7 @@ type t2 = Ast.AstType.programme
 
 let rec analyse_type_affectable a =
   match a with
-  |AstTds.Ident info -> getType info
+  |AstTds.Ident info -> getType info, AstType.Ident(info)
   |AstTds.Deref aff -> analyse_type_affectable aff
 
 
@@ -70,16 +70,14 @@ match e with
     if est_compatible_list tp lt then
       (AstType.AppelFonction(infoast, mle), tr) 
     else 
-      raise(TypesParametresInattendus (tp, lt))
-  
-  |AstTds.Affectable a -> (AstType.Affectable(a), analyse_type_affectable a)
+      raise(TypesParametresInattendus (tp, lt))  
 
-  |AstTds.New t -> (AstType.New , t)
-  |AstTds.Addr t -> AstType.Addr t
-  |AstTds.Null -> AstType.Null
-  | _ -> failwith("autre")
-
-  
+  |AstTds.New t -> (AstType.New , Addr(t))
+  |AstTds.Addr info_ast -> (AstType.Addr(info_ast),Addr(getType info_ast))
+  |AstTds.Null -> (AstType.Null, Addr(Undefined))
+  |AstTds.Affectation a -> let (ta,na) = analyse_type_affectable a in 
+                          (AstType.Affectable na, ta)
+  |AstTds.Affectable _ -> failwith("") (*todo suppr cette merde*)
 
 
 (* analyse_type_instruction : AstTds.instruction -> AstType.instruction *)
@@ -95,6 +93,7 @@ let rec analyse_type_instruction i =
     |Int -> AstType.AffichageInt (ne)
     |Rat -> AstType.AffichageRat (ne)
     |Bool -> AstType.AffichageBool (ne)
+    |Addr(_) -> AstType.AffichageInt(ne)
     |ti -> raise(TypeInattendu (ti, te))
     end
 
@@ -105,14 +104,6 @@ let rec analyse_type_instruction i =
       AstType.Declaration(infoast, ne) 
     else 
       raise(TypeInattendu (te, t))
-  
-  |AstTds.Affectation (aff, e) -> 
-    let t = analyse_type_affectable aff in
-    let (ne, te)= analyse_type_expression e in 
-    if (est_compatible te t) then 
-      AstType.Affectation (aff, ne)
-    else
-      raise (TypeInattendu te t)
 
   |AstTds.Conditionnelle (c, b1, b2) -> 
     let(nc, tc) = analyse_type_expression c in 
@@ -137,6 +128,14 @@ let rec analyse_type_instruction i =
       raise(TypeInattendu (te, getType i))
 
   |Empty -> AstType.Empty
+
+  |AstTds.Affectation (aff, e) -> 
+    let (ta,na) = analyse_type_affectable aff in
+    let (ne, te)= analyse_type_expression e in 
+    if (est_compatible te ta) then 
+      AstType.Affectation (na, ne)
+    else
+      raise (TypeInattendu (te, ta))
 
 (* analyse_type_bloc : AstTds.bloc -> AstType.bloc *)
 (* Paramètre li : une instruction list*)
@@ -173,4 +172,4 @@ let analyse_type_fonction (AstTds.Fonction (t, infoast, lp, corps)) =
 let analyser (AstTds.Programme (fonctions,prog)) =
   let nf = List.map analyse_type_fonction fonctions in
   let nb = analyse_type_bloc prog in
-  AstType.Programme (nf, nb)*)
+  AstType.Programme (nf, nb)

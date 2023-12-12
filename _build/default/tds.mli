@@ -13,7 +13,7 @@ type info =
 (* Table des symboles *)
 type tds 
 
-(* Données stockées dans la tds et dans les AST : pointeur sur une information *)
+(* Données stockées dans la tds et dans les AST : Addr sur une information *)
 type info_ast
 
 (* Création d'une table des symboles à la racine *)

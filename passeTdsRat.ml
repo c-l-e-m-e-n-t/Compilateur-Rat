@@ -111,9 +111,9 @@ let rec analyse_tds_instruction tds oia i =
             let ne = analyse_tds_expression tds e in
             (* Création de l'information associée à l'identfiant *)
             let info = InfoVar (n,Undefined, 0, "") in
-            (* Création du pointeur sur l'information *)
+            (* Création du Addr sur l'information *)
             let ia = info_to_info_ast info in
-            (* Ajout de l'information (pointeur) dans la tds *)
+            (* Ajout de l'information (Addr) dans la tds *)
             ajouter tds n ia;
             (* Renvoie de la nouvelle déclaration où le nom a été remplacé par l'information
             et l'expression remplacée par l'expression issue de l'analyse *)
@@ -221,9 +221,9 @@ let analyse_tds_fonction maintds (AstSyntax.Fonction(t,n,lp,li))  =
     let tdsF = creerTDSFille maintds in
     (* Création de l'information associée à l'identfiant *)
     let info = InfoFun (n,t, List.map fst lp) in
-    (* Création du pointeur sur l'information *)
+    (* Création du Addr sur l'information *)
     let ia = info_to_info_ast info in
-    (* Ajout de l'information (pointeur) dans la tds *)
+    (* Ajout de l'information (Addr) dans la tds *)
     ajouter maintds n ia;
     (*fonction aux pr traiter un param *)
     let b = traite_p tdsF lp in

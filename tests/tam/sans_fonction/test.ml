@@ -49,8 +49,8 @@ let%expect_test "testaddint" =
   runtam (pathFichiersRat^"testaddint.rat");
   [%expect{| 42 |}]
 
-let%expect_test "testaddrat" =
-  runtam (pathFichiersRat^"testaddrat.rat");
+let%expect_test "testAddrat" =
+  runtam (pathFichiersRat^"testAddrat.rat");
   [%expect{| [7/6] |}]
 
 let%expect_test "testmultint" =

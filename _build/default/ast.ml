@@ -44,7 +44,7 @@ type expression =
   | Addr of string
   (* ** *)
   | Affectable of affectable
-  (* Affectation d'un pointeur *)
+  (* Affectation d'un Addr *)
   | Affectation of affectable 
 
 
@@ -132,7 +132,7 @@ end
 module AstType =
 struct
 
-(* Affectables (pointeurs) *)
+(* Affectables (Addrs) *)
 type affectable = Ident of Tds.info_ast | Deref of affectable 
 
 (* Opérateurs unaires de Rat - résolution de la surcharge *)
@@ -161,7 +161,7 @@ type expression =
 type bloc = instruction list
  and instruction =
   | Declaration of Tds.info_ast * expression
-  | Affectation of Tds.info_ast 
+  | Affectation of affectable * expression 
   | AffichageInt of expression
   | AffichageRat of expression
   | AffichageBool of expression
