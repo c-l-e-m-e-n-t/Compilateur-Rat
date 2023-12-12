@@ -28,8 +28,6 @@ type affectable = Ident of string | Deref of affectable
 type expression =
   (* Appel de fonction représenté par le nom de la fonction et la liste des paramètres réels *)
   | AppelFonction of string * expression list
-  (* Accès à un identifiant représenté par son nom *)
-  | Ident of string
   (* Booléen *)
   | Booleen of bool
   (* Entier *)
@@ -57,7 +55,7 @@ and instruction =
   (* Déclaration de variable représentée par son type, son nom et l'expression d'initialisation *)
   | Declaration of typ * string * expression
   (* Affectation d'une variable représentée par son nom et la nouvelle valeur affectée *)
-  | Affectation of string * expression
+  | Affectation of affectable * expression
   (* Déclaration d'une constante représentée par son nom et sa valeur (entier) *)
   | Constante of string * int
   (* Affichage d'une expression *)
@@ -92,7 +90,6 @@ struct
   remplacés par les informations associées aux identificateurs *)
   type expression =
     | AppelFonction of Tds.info_ast * expression list
-    | Ident of Tds.info_ast (* le nom de l'identifiant est remplacé par ses informations *)
     | Booleen of bool
     | Entier of int
     | Unaire of AstSyntax.unaire * expression
@@ -101,7 +98,7 @@ struct
     | New of typ
     | Addr of Tds.info_ast
     | Affectable of affectable
-    | Affectation of affectable * expression
+    | Affectation of affectable
 
 
   (* instructions existantes dans notre langage *)
@@ -111,7 +108,7 @@ struct
   type bloc = instruction list
   and instruction =
     | Declaration of typ * Tds.info_ast * expression (* le nom de l'identifiant est remplacé par ses informations *)
-    | Affectation of  Tds.info_ast * expression (* le nom de l'identifiant est remplacé par ses informations *)
+    | Affectation of  affectable * expression(* le nom de l'identifiant est remplacé par ses informations *)
     | Affichage of expression
     | Conditionnelle of expression * bloc * bloc
     | TantQue of expression * bloc
@@ -148,7 +145,6 @@ type binaire = Fraction | PlusInt | PlusRat | MultInt | MultRat | EquInt | EquBo
 (* = expression de AstTds *)
 type expression =
   | AppelFonction of Tds.info_ast * expression list
-  | Ident of Tds.info_ast
   | Booleen of bool
   | Entier of int
   | Unaire of unaire * expression
@@ -165,7 +161,7 @@ type expression =
 type bloc = instruction list
  and instruction =
   | Declaration of Tds.info_ast * expression
-  | Affectation of Tds.info_ast * expression
+  | Affectation of Tds.info_ast 
   | AffichageInt of expression
   | AffichageRat of expression
   | AffichageBool of expression
@@ -198,7 +194,7 @@ type expression = AstType.expression
 type bloc = instruction list * int (* taille du bloc *)
  and instruction =
  | Declaration of Tds.info_ast * expression
- | Affectation of Tds.info_ast * expression
+ | Affectation of Tds.info_ast 
  | AffichageInt of expression
  | AffichageRat of expression
  | AffichageBool of expression

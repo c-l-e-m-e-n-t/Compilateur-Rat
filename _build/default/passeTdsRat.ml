@@ -7,6 +7,28 @@ open Ast
 type t1 = Ast.AstSyntax.programme
 type t2 = Ast.AstTds.programme
 
+let rec analyse_tds_affectable a tds modif =
+  match a with
+  | AstSyntax.Ident id -> 
+    begin
+      match chercherGlobalement tds id with
+      | Some info -> begin
+        match info_ast_to_info info with 
+        |InfoVar _ -> AstTds.Ident info
+        |InfoConst _ -> 
+          if modif then
+            AstTds.Ident info
+          else 
+            raise (MauvaiseUtilisationIdentifiant id) 
+        | _ -> raise(MauvaiseUtilisationIdentifiant id)
+        end
+      | None -> raise (IdentifiantNonDeclare id)
+      end
+  | AstSyntax.Deref aff -> 
+    let aff = analyse_tds_affectable aff tds modif
+      in AstTds.Deref aff
+
+
 (* analyse_tds_expression : tds -> AstSyntax.expression -> AstTds.expression *)
 (* Paramètre tds : la table des symboles courante *)
 (* Paramètre e : l'expression à analyser *)
@@ -36,18 +58,6 @@ let rec analyse_tds_expression tds e =
         |None ->
           raise(IdentifiantNonDeclare s)
     end
-  |AstSyntax.Ident (s) ->
-    begin
-      match chercherGlobalement tds s with
-      |Some info ->(
-          match info_ast_to_info info with
-          |InfoVar _ -> 
-            AstTds.Ident(info)
-          |InfoFun _ -> raise (MauvaiseUtilisationIdentifiant s)
-          |InfoConst (_,e) -> AstTds.Entier(e))
-      |None ->
-        raise(IdentifiantNonDeclare s)
-    end
   |AstSyntax.Binaire (b, e1, e2) ->
     begin
       let n1 = analyse_tds_expression tds e1 in
@@ -60,10 +70,9 @@ let rec analyse_tds_expression tds e =
       AstTds.Unaire(u, n1)
     end
   |AstSyntax.Affectation a ->
-    failwith ("todo")
-  |AstSyntax.New t -> 
-    failwith ("todo")
-    (*AstTds.Affectation( analyse_tds_affectation aff false tds ) *) 
+    AstTds.Affectation (analyse_tds_affectable a tds true)
+  |AstSyntax.New a -> 
+    New a
   |AstSyntax.Null -> 
     AstTds.Null
   |AstSyntax.Addr id ->
@@ -114,29 +123,10 @@ let rec analyse_tds_instruction tds oia i =
             il a donc déjà été déclaré dans le bloc courant *)
             raise (DoubleDeclaration n)
       end
-  | AstSyntax.Affectation (n,e) ->
-      begin
-        match chercherGlobalement tds n with
-        | None ->
-          (* L'identifiant n'est pas trouvé dans la tds globale. *)
-          raise (IdentifiantNonDeclare n)
-        | Some info ->
-          (* L'identifiant est trouvé dans la tds globale,
-          il a donc déjà été déclaré. L'information associée est récupérée. *)
-          begin
-            match info_ast_to_info info with
-            | InfoVar _ ->
-              (* Vérification de la bonne utilisation des identifiants dans l'expression *)
-              (* et obtention de l'expression transformée *)
-              let ne = analyse_tds_expression tds e in
-              (* Renvoie de la nouvelle affectation où le nom a été remplacé par l'information
-                 et l'expression remplacée par l'expression issue de l'analyse *)
-              AstTds.Affectation (info, ne)
-            |  _ ->
-              (* Modification d'une constante ou d'une fonction *)
-              raise (MauvaiseUtilisationIdentifiant n)
-          end
-      end
+  | AstSyntax.Affectation (a,e) ->
+      let na = analyse_tds_affectable a tds false in
+      let ne = analyse_tds_expression tds e in
+      AstTds.Affectation (na,ne)
   | AstSyntax.Constante (n,v) ->
       begin
         match chercherLocalement tds n with
@@ -178,13 +168,14 @@ let rec analyse_tds_instruction tds oia i =
       begin
       (* On récupère l'information associée à la fonction à laquelle le return est associée *)
       match oia with
-        (* Il n'y a pas d'information -> l'instruction est dans le bloc principal : erreur *)
-      | None -> raise RetourDansMain
-        (* Il y a une information -> l'instruction est dans une fonction *)
-      | Some ia ->
+       (* Il y a une information -> l'instruction est dans une fonction *)
+       | Some ia ->
         (* Analyse de l'expression *)
         let ne = analyse_tds_expression tds e in
         AstTds.Retour (ne,ia)
+        (* Il n'y a pas d'information -> l'instruction est dans le bloc principal : erreur *)
+      | None -> raise RetourDansMain
+       
       end
 
 

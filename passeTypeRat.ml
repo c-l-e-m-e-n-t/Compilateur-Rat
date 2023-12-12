@@ -1,4 +1,4 @@
-(* Module de la passe de gestion des types *)
+(*(* Module de la passe de gestion des types *)
 (* doit être conforme à l'interface Passe *)
 open Tds
 open Exceptions
@@ -7,6 +7,12 @@ open Type
 
 type t1 = Ast.AstTds.programme
 type t2 = Ast.AstType.programme  
+
+let rec analyse_type_affectable a =
+  match a with
+  |AstTds.Ident info -> getType info
+  |AstTds.Deref aff -> analyse_type_affectable aff
+
 
 (* analyse_type_expression : AstTds.expression -> AstType.expression*typ *)
 (* Paramètre e : une expression*)
@@ -42,11 +48,6 @@ match e with
     (* Obtention de l'expression transformée *)
     (AstType.Entier ent, Int)
 
-  |AstTds.Ident (id) -> 
-    (* Verification de l'utilisation du bon type dans l'expression *)
-    (* Obtention de l'expression transformée *)
-    (AstType.Ident id, getType id) 
-
   |AstTds.Unaire (un, exp) ->  
     let(ne, te) = analyse_type_expression exp in
     begin
@@ -70,6 +71,15 @@ match e with
       (AstType.AppelFonction(infoast, mle), tr) 
     else 
       raise(TypesParametresInattendus (tp, lt))
+  
+  |AstTds.Affectable a -> (AstType.Affectable(a), analyse_type_affectable a)
+
+  |AstTds.New t -> (AstType.New , t)
+  |AstTds.Addr t -> AstType.Addr t
+  |AstTds.Null -> AstType.Null
+  | _ -> failwith("autre")
+
+  
 
 
 (* analyse_type_instruction : AstTds.instruction -> AstType.instruction *)
@@ -96,12 +106,13 @@ let rec analyse_type_instruction i =
     else 
       raise(TypeInattendu (te, t))
   
-  |AstTds.Affectation (info, e) -> 
+  |AstTds.Affectation (aff, e) -> 
+    let t = analyse_type_affectable aff in
     let (ne, te)= analyse_type_expression e in 
-    let ti = getType info in
-    if est_compatible ti te then
-      AstType.Affectation (info, ne)
-    else raise(TypeInattendu (te, ti))
+    if (est_compatible te t) then 
+      AstType.Affectation (aff, ne)
+    else
+      raise (TypeInattendu te t)
 
   |AstTds.Conditionnelle (c, b1, b2) -> 
     let(nc, tc) = analyse_type_expression c in 
@@ -162,4 +173,4 @@ let analyse_type_fonction (AstTds.Fonction (t, infoast, lp, corps)) =
 let analyser (AstTds.Programme (fonctions,prog)) =
   let nf = List.map analyse_type_fonction fonctions in
   let nb = analyse_type_bloc prog in
-  AstType.Programme (nf, nb)
+  AstType.Programme (nf, nb)*)

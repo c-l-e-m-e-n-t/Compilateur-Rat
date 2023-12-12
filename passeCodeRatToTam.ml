@@ -1,4 +1,4 @@
-(* Module de la passe de generation de code *)
+(*(* Module de la passe de generation de code *)
 (* doit être conforme à l'interface Passe *)
 open Tds
 open Ast
@@ -62,6 +62,7 @@ let rec analyser_code_expression e =
       Tam.call "SB" n
     | _ -> failwith ("pas d'info fun")
     end
+  | _ -> failwith ("todo")
   end
 
   
@@ -150,4 +151,4 @@ let analyser  (AstPlacement.Programme (lf , b)) =
   String.concat "" (List.map(analyser_code_fonction) lf) ^
   "main \n" ^
   analyser_code_bloc b ^
-  Tam.halt
+  Tam.halt*)

@@ -1,4 +1,4 @@
-(* Module de la passe de placement *)
+(*(* Module de la passe de placement *)
 (* doit être conforme à l'interface Passe *)
 open Tds
 open Ast
@@ -100,4 +100,4 @@ let analyse_placement_fonction (AstType.Fonction(info_ast, infol, instl)) =
 let analyser  (AstType.Programme (lf, b)) =
   let mlf = List.map analyse_placement_fonction lf in 
   let mb  = analyse_placement_bloc b 0 "SB" in
-  AstPlacement.Programme (mlf,mb)
+  AstPlacement.Programme (mlf,mb)*)

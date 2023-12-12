@@ -67,7 +67,7 @@ bloc : AO li=i* AF      {li}
 
 i :
 | t=typ n=ID EQUAL e1=e PV          {Declaration (t,n,e1)}
-| n=ID EQUAL e1=e PV                {Affectation (n,e1)}
+| n=a EQUAL e1=e PV                 {Affectation (n,e1)}
 | CONST n=ID EQUAL e=ENTIER PV      {Constante (n,e)}
 | PRINT e1=e PV                     {Affichage (e1)}
 | IF exp=e li1=bloc ELSE li2=bloc   {Conditionnelle (exp,li1,li2)}
@@ -75,12 +75,15 @@ i :
 | RETURN exp=e PV                   {Retour (exp)}
 | t=typ MULT n=ID EQUAL e1=e PV     {Declaration (Addr t,n,e1)}
 
+a :
+| n = ID            {Ident n}
+| MULT aff=a        {Deref aff}  
+
 typ :
 | BOOL          {Bool}
 | INT           {Int}
 | RAT           {Rat}
-| t=typ MULT    {Addr t} 
-
+| t=typ MULT   {Addr t} 
 
 e : 
 | n=ID PO lp=separated_list(VIRG,e) PF   {AppelFonction (n,lp)}
@@ -95,14 +98,8 @@ e :
 | PO e1=e EQUAL e2=e PF   {Binaire (Equ,e1,e2)}
 | PO e1=e INF e2=e PF     {Binaire (Inf,e1,e2)}
 | PO exp=e PF             {exp}
-| PO NEW t=typ            {New t}  
+| PO NEW t=typ PF         {New t}  
 | aff=a                   {Affectation aff}
 | AND n=ID                {Addr n}  
 | NULL                    {Null} 
 
-
-
-
-a :
-| n = ID                  {Ident n}
-| PO MULT aff=a PF        {Deref aff}  
