@@ -73,7 +73,6 @@ i :
 | IF exp=e li1=bloc ELSE li2=bloc   {Conditionnelle (exp,li1,li2)}
 | WHILE exp=e li=bloc               {TantQue (exp,li)}
 | RETURN exp=e PV                   {Retour (exp)}
-| t=typ MULT n=ID EQUAL e1=e PV     {Declaration (Addr t,n,e1)}
 
 a :
 | n = ID            {Ident n}
@@ -83,7 +82,7 @@ typ :
 | BOOL          {Bool}
 | INT           {Int}
 | RAT           {Rat}
-| t=typ MULT   {Addr t} 
+| t=typ MULT   {Pointeur t} 
 
 e : 
 | n=ID PO lp=separated_list(VIRG,e) PF   {AppelFonction (n,lp)}

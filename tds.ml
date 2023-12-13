@@ -365,10 +365,12 @@ let getAddr a =
   let info = info_ast_to_info a in 
   match info with 
   | InfoVar (_,_,addr,_) -> addr
+  | InfoConst (_,addr) -> addr
   |_ ->  failwith ("airheure addr")
 
 let getReg a =
   let info = info_ast_to_info a in 
   match info with 
   | InfoVar (_,_,_,reg) -> reg
+  | InfoConst (_,_) -> "SB"
   | _ -> failwith ("airheure reg")

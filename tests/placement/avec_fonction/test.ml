@@ -40,6 +40,11 @@ let test fichier fonction (var,occ) (dep,registre) =
 
 let pathFichiersRat = "../../../../../tests/placement/avec_fonction/fichiersRat/"
 
+let%test "pointeur1" = 
+  test (pathFichiersRat^"testPointeur1.rat")  "main" ("x",1)  (0,"SB")
+
+let%test "pointeur2" = 
+test (pathFichiersRat^"testPointeur2.rat")  "main" ("x",1)  (0,"SB")
 
 let%test "test8_x_1" = 
   test (pathFichiersRat^"test8.rat")  "main" ("x",1)  (0, "SB")

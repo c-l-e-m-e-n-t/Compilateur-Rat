@@ -2,7 +2,8 @@ test{
   int * x = (new int);
   * x = 4;
   int * * y = & x;
-  int z = 4;
+  int z = 5;
   *x  = z;
   *y = & z;
+  print ( * x );
 }

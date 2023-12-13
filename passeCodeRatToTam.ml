@@ -8,18 +8,21 @@ open Tam
 type t1 = Ast.AstPlacement.programme
 type t2 = string
 
-let rec analyse_code_affectable a instruction =
-  let rec aux instruction =
+(*Convertir un affectable en code TAM *)
+let rec analyse_code_affectable a =
+  match a with 
+  | AstType.Ident info -> 
+      Tam.load (getTaille (getType info)) (getAddr info) (getReg info)
+  | AstType.Deref aff -> analyse_code_affectable aff 
+
+  let rec analyse_code_affectable2 a =
     match a with 
-    |AstType.Ident info -> 
-      let typ = getType info in
-        instruction getTaille(getType info) (getAddr info) (getReg info)
-    |AstType.Deref a2 -> 
-      let typ = (analyse_code_affectable a2 Tam.load) in
-      match typ with 
-      | Addr ntyp -> instruction (getTaille ntyp)
-      | _ -> failwith ("err")
-    in snd (aux a instruction)
+    | AstPlacement.Ident info -> 
+      Tam.push 1^
+      Tam.loadl_int 1 ^
+      Tam.subr "MAlloc" ^
+      Tam.store (getTaille (getType info)) (getAddr info) (getReg info)
+    | AstPlacement.Deref aff -> analyse_code_affectable2 aff
 
 
 
@@ -79,10 +82,10 @@ let rec analyser_code_expression e =
     Tam.subr "MVoid"
 
   |AstType.Affectable a -> 
-    analyse_code_affectable a Tam.load
+    analyse_code_affectable a
 
   |AstType.Addr info -> 
-    Tam.loadl_int getAddr info
+    Tam.loadl_int (getAddr info)
 
   | _ -> failwith ("todo")
   end
@@ -103,8 +106,11 @@ let rec analyser_code_instruction i =
     | _ -> failwith("aupfzbvzegv" )
     end
   |AstPlacement.Affectation (a, e) -> 
-    analyser_code_expression e ^
-    analyse_code_affectable a Tam.store
+    analyser_code_expression e ^(
+    match a with 
+    | AstPlacement.Ident info -> 
+      Tam.store (getTaille (getType info)) (getAddr info) (getReg info)
+    | AstPlacement.Deref aff -> analyse_code_affectable2 aff)
 
   |AstPlacement.TantQue (c, b) ->
     (*generer etiquette automatiquement*)

@@ -1,5 +1,5 @@
 (* Types manipulés dans Rat *)
-type typ = Bool | Int | Rat | Undefined |Addr of typ | Null 
+type typ = Bool | Int | Rat | Undefined |Pointeur of typ | Null 
 
 (* Types manipulés par les Addrs *)
 type affectable = Ident of string | Deref of affectable 

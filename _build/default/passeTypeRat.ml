@@ -10,14 +10,18 @@ type t2 = Ast.AstType.programme
 
 let rec analyse_type_affectable a =
   match a with
-  |AstTds.Ident info -> getType info, AstType.Ident(info)
-  |AstTds.Deref aff ->
-    let naff = analyse_type_affectable aff in
-    begin 
-      match (snd naff) with
-      |Addr t -> AstType.Deref((fst naff),t)
-      | t -> failwith ("raté !")
+  |AstTds.Ident info -> 
+    begin
+    match info_ast_to_info info with
+      |Tds.InfoVar(_,t,_,_) -> (AstType.Ident info,t)
+      |Tds.InfoFun _ -> failwith ("pas id")
+      |Tds.InfoConst _ -> (AstType.Ident(info), Int)
     end
+  |AstTds.Deref aff ->
+    (match analyse_type_affectable aff with
+    | (naff, Pointeur(t)) -> (AstType.Deref(naff),t)
+    |_ -> failwith("err"))
+
 
 
 
@@ -79,10 +83,10 @@ match e with
     else 
       raise(TypesParametresInattendus (tp, lt))  
 
-  |AstTds.New t -> (AstType.New t , Addr t)
-  |AstTds.Addr info_ast -> (AstType.Addr(info_ast),Addr(getType info_ast))
-  |AstTds.Null -> (AstType.Null, Addr(Undefined))
-  |AstTds.Affectation a -> let (ta,na) = analyse_type_affectable a in 
+  |AstTds.New t -> (AstType.New t , Pointeur t)
+  |AstTds.Addr info_ast -> (AstType.Addr(info_ast), Pointeur(getType info_ast))
+  |AstTds.Null -> (AstType.Null, Pointeur(Undefined))
+  |AstTds.Affectation a -> let (na, ta) = analyse_type_affectable a in 
                           (AstType.Affectable na, ta)
   |AstTds.Affectable _ -> failwith("") (*todo suppr cette merde*)
 
@@ -100,7 +104,7 @@ let rec analyse_type_instruction i =
     |Int -> AstType.AffichageInt (ne)
     |Rat -> AstType.AffichageRat (ne)
     |Bool -> AstType.AffichageBool (ne)
-    |Addr(_) -> AstType.AffichageInt(ne)
+    |Pointeur(_) -> AstType.AffichageInt(ne)
     |ti -> raise(TypeInattendu (ti, te))
     end
 
@@ -137,7 +141,7 @@ let rec analyse_type_instruction i =
   |Empty -> AstType.Empty
 
   |AstTds.Affectation (aff, e) -> 
-    let (ta, na) = analyse_type_affectable aff in
+    let (na, ta) = analyse_type_affectable aff in
     let (ne, te)= analyse_type_expression e in 
     if (est_compatible te ta) then 
       AstType.Affectation (na, ne)

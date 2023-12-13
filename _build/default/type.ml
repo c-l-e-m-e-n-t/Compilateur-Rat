@@ -1,4 +1,4 @@
-type typ = Bool | Int | Rat | Undefined | Addr of typ | Null 
+type typ = Bool | Int | Rat | Undefined | Pointeur of typ | Null 
 
 type affectable = Ident of string | Deref of affectable 
 
@@ -8,7 +8,7 @@ let rec string_of_type t =
   | Int  ->  "Int"
   | Rat  ->  "Rat"
   | Undefined -> "Undefined"
-  | Addr p -> "Adress"^(string_of_type p)
+  | Pointeur p -> "Adress"^(string_of_type p)
   | Null -> "Null" 
 
 
@@ -17,9 +17,9 @@ let rec est_compatible t1 t2 =
   | Bool, Bool -> true
   | Int, Int -> true
   | Rat, Rat -> true 
-  | Addr _, Null -> true
-  | Null, Addr _ -> true
-  | Addr(typ1), Addr(typ2) -> est_compatible typ1 typ2 
+  | Pointeur _, Null -> true
+  | Null, Pointeur _ -> true
+  | Pointeur(typ1), Pointeur(typ2) -> est_compatible typ1 typ2 
   | _ -> false 
 
 let%test _ = est_compatible Bool Bool
@@ -58,10 +58,10 @@ let getTaille t =
   | Bool -> 1
   | Rat -> 2
   | Undefined -> 0
-  | Addr _ -> 1
+  | Pointeur _ -> 1
   | Null -> 0 
   
 let%test _ = getTaille Int = 1
 let%test _ = getTaille Bool = 1
 let%test _ = getTaille Rat = 2
-let%test _ = getTaille (Addr Int) = 1
+let%test _ = getTaille (Pointeur Int) = 1
