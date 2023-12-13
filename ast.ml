@@ -150,7 +150,7 @@ type expression =
   | Unaire of unaire * expression
   | Binaire of binaire * expression * expression
   | Null
-  | New
+  | New of typ
   | Addr of Tds.info_ast
   | Affectable of affectable 
   | Affectation of affectable * expression

@@ -360,3 +360,15 @@ let getTypeParam infoAst =
   match info with
   | InfoFun (_,_,l) -> l
   | _ -> []
+
+let getAddr a =
+  let info = info_ast_to_info a in 
+  match info with 
+  | InfoVar (_,_,addr,_) -> addr
+  |_ ->  failwith ("airheure addr")
+
+let getReg a =
+  let info = info_ast_to_info a in 
+  match info with 
+  | InfoVar (_,_,_,reg) -> reg
+  | _ -> failwith ("airheure reg")

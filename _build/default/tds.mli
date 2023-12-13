@@ -67,3 +67,7 @@ val getType : info_ast -> typ
 
 (* Retourne le type d'une liste d'info ast*)
 val getTypeParam : info_ast -> typ list
+
+val getAddr : info_ast -> int
+
+val getReg : info_ast -> string

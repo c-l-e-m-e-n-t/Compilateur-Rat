@@ -71,8 +71,8 @@ let rec analyse_tds_expression tds e =
     end
   |AstSyntax.Affectation a ->
     AstTds.Affectation (analyse_tds_affectable a tds true)
-  |AstSyntax.New a -> 
-    New a
+  |AstSyntax.New t -> 
+    AstTds.New t
   |AstSyntax.Null -> 
     AstTds.Null
   |AstSyntax.Addr id ->

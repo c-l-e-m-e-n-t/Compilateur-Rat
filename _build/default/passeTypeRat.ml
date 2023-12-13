@@ -11,7 +11,14 @@ type t2 = Ast.AstType.programme
 let rec analyse_type_affectable a =
   match a with
   |AstTds.Ident info -> getType info, AstType.Ident(info)
-  |AstTds.Deref aff -> analyse_type_affectable aff
+  |AstTds.Deref aff ->
+    let naff = analyse_type_affectable aff in
+    begin 
+      match (snd naff) with
+      |Addr t -> AstType.Deref((fst naff),t)
+      | t -> failwith ("raté !")
+    end
+
 
 
 (* analyse_type_expression : AstTds.expression -> AstType.expression*typ *)
@@ -72,7 +79,7 @@ match e with
     else 
       raise(TypesParametresInattendus (tp, lt))  
 
-  |AstTds.New t -> (AstType.New , Addr(t))
+  |AstTds.New t -> (AstType.New t , Addr t)
   |AstTds.Addr info_ast -> (AstType.Addr(info_ast),Addr(getType info_ast))
   |AstTds.Null -> (AstType.Null, Addr(Undefined))
   |AstTds.Affectation a -> let (ta,na) = analyse_type_affectable a in 
@@ -130,7 +137,7 @@ let rec analyse_type_instruction i =
   |Empty -> AstType.Empty
 
   |AstTds.Affectation (aff, e) -> 
-    let (ta,na) = analyse_type_affectable aff in
+    let (ta, na) = analyse_type_affectable aff in
     let (ne, te)= analyse_type_expression e in 
     if (est_compatible te ta) then 
       AstType.Affectation (na, ne)

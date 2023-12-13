@@ -1,4 +1,4 @@
-(*(* Module de la passe de generation de code *)
+(* Module de la passe de generation de code *)
 (* doit être conforme à l'interface Passe *)
 open Tds
 open Ast
@@ -7,6 +7,22 @@ open Tam
 
 type t1 = Ast.AstPlacement.programme
 type t2 = string
+
+let rec analyse_code_affectable a instruction =
+  let rec aux instruction =
+    match a with 
+    |AstType.Ident info -> 
+      let typ = getType info in
+        instruction getTaille(getType info) (getAddr info) (getReg info)
+    |AstType.Deref a2 -> 
+      let typ = (analyse_code_affectable a2 Tam.load) in
+      match typ with 
+      | Addr ntyp -> instruction (getTaille ntyp)
+      | _ -> failwith ("err")
+    in snd (aux a instruction)
+
+
+
 
 (* analyser_code_expression : AstType.expression -> string *)
 (*Paramètre e : expression *)
@@ -20,13 +36,6 @@ let rec analyser_code_expression e =
       loadl_int 1
     else 
       loadl_int 0
-  |AstType.Ident info -> 
-    begin
-      match info_ast_to_info info with 
-      |InfoConst ( _, v) -> Tam.loadl_int v
-      |InfoVar (_, t, depl, reg) -> Tam.load (getTaille t) depl reg
-      | _ -> failwith("info non supportée")
-    end
   |AstType.Unaire (op, e1) -> 
     let a = analyser_code_expression e1 in
     begin
@@ -62,9 +71,21 @@ let rec analyser_code_expression e =
       Tam.call "SB" n
     | _ -> failwith ("pas d'info fun")
     end
+  |AstType.New t -> 
+    Tam.loadl_int (getTaille t )^
+    Tam.subr "MAlloc"
+
+  |AstType.Null -> 
+    Tam.subr "MVoid"
+
+  |AstType.Affectable a -> 
+    analyse_code_affectable a Tam.load
+
+  |AstType.Addr info -> 
+    Tam.loadl_int getAddr info
+
   | _ -> failwith ("todo")
   end
-
   
 (* analyser_code_instruction : AstPlacement.instruction -> string *)
 (*Paramètre i : instruction *)
@@ -81,15 +102,10 @@ let rec analyser_code_instruction i =
       end
     | _ -> failwith("aupfzbvzegv" )
     end
-  |AstPlacement.Affectation (info, e) -> 
-    begin
-    match info_ast_to_info info with
-    |InfoVar (_, t, depl, reg) ->
-      Tam.push (getTaille t) ^
-      (analyser_code_expression e) ^ Tam.store (getTaille t) depl reg
+  |AstPlacement.Affectation (a, e) -> 
+    analyser_code_expression e ^
+    analyse_code_affectable a Tam.store
 
-    | _ -> failwith ("greqôg")
-    end
   |AstPlacement.TantQue (c, b) ->
     (*generer etiquette automatiquement*)
     let debut = Code.getEtiquette() in
@@ -151,4 +167,4 @@ let analyser  (AstPlacement.Programme (lf , b)) =
   String.concat "" (List.map(analyser_code_fonction) lf) ^
   "main \n" ^
   analyser_code_bloc b ^
-  Tam.halt*)
+  Tam.halt
