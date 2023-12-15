@@ -1,10 +1,10 @@
-# dune runtest tests/tam/sans_fonction/
+# dune runtest
 # OCAMLPARAM: unset
 # Shared cache: disabled
 # Workspace root:
 # /home/ccognard/Annee2/Programmation_Fonctionnelle/Projet/Compilateur-Rat
 # Auto-detected concurrency: 4
-$ /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -config > /tmp/dune_80151d_output
+$ /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -config > /tmp/dune_92cc59_output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -112,4 +112,4 @@ $ /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -config > /tmp/dune_80151d_out
 #      ; windows_unicode = false
 #      }
 #  }
-$ (cd _build/default/tests/tam/sans_fonction && .sans_fonction_tam.inline-tests/inline_test_runner_sans_fonction_tam.exe inline-test-runner sans_fonction_tam -source-tree-root ../../.. -diff-cmd -)
+$ (cd _build/default/tests/tam/avec_fonction && .avec_fonction_tam.inline-tests/inline_test_runner_avec_fonction_tam.exe inline-test-runner avec_fonction_tam -source-tree-root ../../.. -diff-cmd -)
