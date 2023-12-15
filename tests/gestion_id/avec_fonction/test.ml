@@ -13,10 +13,17 @@ let pathFichiersRat = "../../../../../tests/gestion_id/avec_fonction/fichiersRat
 (**********)
 (*  TESTS *)
 (**********)
-let%test_unit "testAddr1" = 
+
+let%test_unit "testPointeur3" = 
+  let _ = compiler (pathFichiersRat^"testPointeur3.rat") in ()
+(*
+let%test_unit "testTab" = 
+  let _ = compiler (pathFichiersRat^"testTableaux.rat") in ()
+*)
+let%test_unit "testPointeur1" = 
   let _ = compiler (pathFichiersRat^"testPointeur1.rat") in ()
 
-let%test_unit "testAddr2" = 
+let%test_unit "testPointeur2" = 
   let _ = compiler (pathFichiersRat^"testPointeur2.rat") in ()
 
 

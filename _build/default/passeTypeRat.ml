@@ -15,7 +15,7 @@ let rec analyse_type_affectable a =
     match info_ast_to_info info with
       |Tds.InfoVar(_,t,_,_) -> (AstType.Ident info,t)
       |Tds.InfoFun _ -> failwith ("pas id")
-      |Tds.InfoConst _ -> (AstType.Ident(info), Int)
+      |Tds.InfoConst _ -> (AstType.Ident info, Int)
     end
   |AstTds.Deref aff ->
     (match analyse_type_affectable aff with

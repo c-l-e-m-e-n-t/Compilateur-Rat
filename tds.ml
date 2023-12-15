@@ -372,5 +372,4 @@ let getReg a =
   let info = info_ast_to_info a in 
   match info with 
   | InfoVar (_,_,_,reg) -> reg
-  | InfoConst (_,_) -> "SB"
   | _ -> failwith ("airheure reg")

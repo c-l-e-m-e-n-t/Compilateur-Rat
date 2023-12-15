@@ -12,17 +12,33 @@ type t2 = string
 let rec analyse_code_affectable a =
   match a with 
   | AstType.Ident info -> 
-      Tam.load (getTaille (getType info)) (getAddr info) (getReg info)
-  | AstType.Deref aff -> analyse_code_affectable aff 
+    begin
+    match info_ast_to_info info with
+      |InfoVar (_,t,d,reg) -> Tam.load (getTaille t) (d) (reg), t
+      |InfoConst (_,i) -> Tam.loadl_int  i, Int
+      | _ -> failwith("mauvais info")
+    end
+  | AstType.Deref a -> 
+    let str, t = analyse_code_affectable a in
+    match t with
+      |Pointeur _ -> 
+        str^Tam.loadi (getTaille t), t
+      |_ -> failwith "Err"
 
   let rec analyse_code_affectable2 a =
     match a with 
     | AstPlacement.Ident info -> 
-      Tam.push 1^
-      Tam.loadl_int 1 ^
-      Tam.subr "MAlloc" ^
-      Tam.store (getTaille (getType info)) (getAddr info) (getReg info)
-    | AstPlacement.Deref aff -> analyse_code_affectable2 aff
+      begin
+        match info_ast_to_info info with
+          |InfoVar (_,t,d,reg) -> Tam.store (getTaille t) (d) (reg), t
+          | _ -> failwith("mauvais info")
+        end
+    | AstPlacement.Deref a -> 
+      let str, t = analyse_code_affectable2 a in
+      match t with
+        |Pointeur _ -> 
+          str^Tam.storei (getTaille t), t
+        |_ -> failwith "Err"
 
 
 
@@ -82,7 +98,7 @@ let rec analyser_code_expression e =
     Tam.subr "MVoid"
 
   |AstType.Affectable a -> 
-    analyse_code_affectable a
+    fst (analyse_code_affectable a)
 
   |AstType.Addr info -> 
     Tam.loadl_int (getAddr info)
@@ -110,7 +126,7 @@ let rec analyser_code_instruction i =
     match a with 
     | AstPlacement.Ident info -> 
       Tam.store (getTaille (getType info)) (getAddr info) (getReg info)
-    | AstPlacement.Deref aff -> analyse_code_affectable2 aff)
+    | AstPlacement.Deref aff -> fst (analyse_code_affectable2 a))
 
   |AstPlacement.TantQue (c, b) ->
     (*generer etiquette automatiquement*)
