@@ -22,8 +22,6 @@ type unaire = Numerateur | Denominateur
 (* Opérateurs binaires de Rat *)
 type binaire = Fraction | Plus | Mult | Equ | Inf
 
-type affectable = Ident of string | Deref of affectable 
-
 (* Expressions de Rat *)
 type expression =
   (* Appel de fonction représenté par le nom de la fonction et la liste des paramètres réels *)
@@ -46,7 +44,15 @@ type expression =
   | Affectable of affectable
   (* Affectation d'un Addr *)
   | Affectation of affectable 
+  (* Tableaux *)
+  | Tab of typ 
+  (* nouveau tableau *)
+  | NewTab of typ * expression
+  (* init tableau *)
+  | InitTab of expression list
 
+  and affectable = Ident of string | Deref of affectable | Access of affectable * expression
+  
 
 
 (* Instructions de Rat *)
@@ -66,6 +72,8 @@ and instruction =
   | TantQue of expression * bloc
   (* return d'une fonction *)
   | Retour of expression
+  (* Boucle For *)
+  | For of string * expression * expression * string * expression * bloc
 
 (* Structure des fonctions de Rat *)
 (* type de retour - nom - liste des paramètres (association type et nom) - corps de la fonction *)
@@ -83,8 +91,6 @@ end
 (* ********************************************* *)
 module AstTds =
 struct
-  type affectable = Ident of Tds.info_ast | Deref of affectable 
-
   (* Expressions existantes dans notre langage *)
   (* ~ expression de l'AST syntaxique où les noms des identifiants ont été
   remplacés par les informations associées aux identificateurs *)
@@ -99,6 +105,11 @@ struct
     | Addr of Tds.info_ast
     | Affectable of affectable
     | Affectation of affectable
+    | Tab of typ
+    | NewTab of typ * expression
+    | InitTab of expression list
+    
+  and affectable = Ident of Tds.info_ast | Deref of affectable | Access of affectable * expression
 
 
   (* instructions existantes dans notre langage *)
@@ -114,7 +125,7 @@ struct
     | TantQue of expression * bloc
     | Retour of expression * Tds.info_ast  (* les informations sur la fonction à laquelle est associé le retour *)
     | Empty (* les nœuds ayant disparus: Const *)
-
+    | For of Tds.info_ast * expression * expression * Tds.info_ast * expression * bloc
 
   (* Structure des fonctions dans notre langage *)
   (* type de retour - informations associées à l'identificateur (dont son nom) - liste des paramètres (association type et information sur les paramètres) - corps de la fonction *)
@@ -131,9 +142,6 @@ end
 (* ******************************* *)
 module AstType =
 struct
-
-(* Affectables (Addrs) *)
-type affectable = Ident of Tds.info_ast | Deref of affectable 
 
 (* Opérateurs unaires de Rat - résolution de la surcharge *)
 type unaire = Numerateur | Denominateur
@@ -154,6 +162,11 @@ type expression =
   | Addr of Tds.info_ast
   | Affectable of affectable 
   | Affectation of affectable * expression
+  | Tab of typ
+  | NewTab of typ * expression
+  | InitTab of expression list
+  
+and affectable = Ident of Tds.info_ast | Deref of affectable | Access of affectable * expression
 
 (* instructions existantes Rat *)
 (* = instruction de AstTds + informations associées aux identificateurs, mises à jour *)
@@ -169,6 +182,7 @@ type bloc = instruction list
   | TantQue of expression * bloc
   | Retour of expression * Tds.info_ast
   | Empty (* les nœuds ayant disparus: Const *)
+  | For of Tds.info_ast * expression * expression * Tds.info_ast * expression * bloc
 
 (* informations associées à l'identificateur (dont son nom), liste des paramètres, corps *)
 type fonction = Fonction of Tds.info_ast * Tds.info_ast list * bloc
@@ -186,12 +200,11 @@ end
 module AstPlacement =
 struct
 
-(* Affectables (Addrs) *)
-type affectable = Ident of Tds.info_ast | Deref of affectable 
-
 (* Expressions existantes dans notre langage *)
 (* = expression de AstType  *)
 type expression = AstType.expression
+
+and affectable = Ident of Tds.info_ast | Deref of affectable | Access of affectable * expression
 
 (* instructions existantes dans notre langage *)
 type bloc = instruction list * int (* taille du bloc *)
@@ -205,6 +218,7 @@ type bloc = instruction list * int (* taille du bloc *)
  | TantQue of expression * bloc
  | Retour of expression * int * int (* taille du retour et taille des paramètres *)
  | Empty (* les nœuds ayant disparus: Const *)
+ | For of Tds.info_ast * expression * expression * Tds.info_ast * expression * bloc
 
 (* informations associées à l'identificateur (dont son nom), liste de paramètres, corps, expression de retour *)
 (* Plus besoin de la liste des paramètres mais on la garde pour les tests du placements mémoire *)

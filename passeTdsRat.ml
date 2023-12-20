@@ -1,32 +1,11 @@
 (* Module de la passe de gestion des identifiants *)
 (* doit être conforme à l'interface Passe *)
-open Tds
 open Exceptions
+open Tds
 open Ast
 
 type t1 = Ast.AstSyntax.programme
 type t2 = Ast.AstTds.programme
-
-let rec analyse_tds_affectable a tds modif =
-  match a with
-  | AstSyntax.Ident id -> 
-    begin
-      match chercherGlobalement tds id with
-      | Some info -> begin
-        match info_ast_to_info info with 
-        |InfoVar _ -> AstTds.Ident info
-        |InfoConst _ -> 
-          if modif then
-            AstTds.Ident info
-          else 
-            raise (MauvaiseUtilisationIdentifiant id) 
-        | _ -> raise(MauvaiseUtilisationIdentifiant id)
-        end
-      | None -> raise (IdentifiantNonDeclare id)
-      end
-  | AstSyntax.Deref aff -> 
-    let aff = analyse_tds_affectable aff tds modif
-      in AstTds.Deref aff
 
 
 (* analyse_tds_expression : tds -> AstSyntax.expression -> AstTds.expression *)
@@ -86,10 +65,48 @@ let rec analyse_tds_expression tds e =
           end 
      |None -> 
         raise (IdentifiantNonDeclare id) 
+    end  
+  |AstSyntax.NewTab (t, ne) ->
+    begin
+      let n1 = analyse_tds_expression tds ne in
+      AstTds.NewTab(t, n1)
     end
-  | _ -> failwith ("cas non traité)") 
+  |AstSyntax.InitTab (el) -> 
+    begin
+      let n1 = List.map (analyse_tds_expression tds) el in
+      AstTds.InitTab(n1)
+    end
+  |AstSyntax.Tab t ->
+    AstTds.Tab t
+  | _ -> failwith ("cas non traité") 
 
-
+  and analyse_tds_affectable a tds modif =
+    match a with
+    | AstSyntax.Ident id -> 
+      begin
+        match chercherGlobalement tds id with
+        | Some info -> begin
+          match info_ast_to_info info with 
+          |InfoVar _ -> AstTds.Ident info
+          |InfoConst _ -> 
+            if modif then
+              AstTds.Ident info
+            else 
+              raise (MauvaiseUtilisationIdentifiant id) 
+          | _ -> raise(MauvaiseUtilisationIdentifiant id)
+          end
+        | None -> raise (IdentifiantNonDeclare id)
+        end
+    | AstSyntax.Deref aff -> 
+      let aff = analyse_tds_affectable aff tds modif
+        in AstTds.Deref aff
+    |AstSyntax.Access (a, e2) ->
+      begin
+        let n1 = analyse_tds_affectable a tds false in
+        let n2 = analyse_tds_expression tds e2 in
+        AstTds.Access(n1, n2)
+      end
+      
 (* analyse_tds_instruction : tds -> info_ast option -> AstSyntax.instruction -> AstTds.instruction *)
 (* Paramètre tds : la table des symboles courante *)
 (* Paramètre oia : None si l'instruction i est dans le bloc principal,
@@ -175,8 +192,32 @@ let rec analyse_tds_instruction tds oia i =
         AstTds.Retour (ne,ia)
         (* Il n'y a pas d'information -> l'instruction est dans le bloc principal : erreur *)
       | None -> raise RetourDansMain
-       
       end
+  | AstSyntax.For (n1,e1,e2,n2,e3,b) -> 
+    begin
+    match chercherLocalement tds n1 with
+      | None ->
+        let info1 = InfoVar (n1,Undefined, 0, "") in
+        let ia1 = info_to_info_ast info1 in
+        ajouter tds n1 ia1;
+        begin
+        match chercherLocalement tds n1 with
+        | None ->
+            let info2 = InfoVar (n1,Undefined, 0, "") in
+            let ia2 = info_to_info_ast info2 in
+            ajouter tds n2 ia2;
+            let ec1 = analyse_tds_expression tds e1 in
+            let ec2 = analyse_tds_expression tds e2 in
+            let ec3 = analyse_tds_expression tds e3 in
+            let bl = analyse_tds_bloc tds oia b in
+            AstTds.For (ia1,ec1,ec2,ia2,ec3,bl)
+        | Some _ ->
+            raise (DoubleDeclaration n2)
+        end
+      | Some _ ->
+          raise (DoubleDeclaration n1)
+      end
+    
 
 
 (* analyse_tds_bloc : tds -> info_ast option -> AstSyntax.bloc -> AstTds.bloc *)

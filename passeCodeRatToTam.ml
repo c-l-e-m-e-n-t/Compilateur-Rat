@@ -8,46 +8,12 @@ open Tam
 type t1 = Ast.AstPlacement.programme
 type t2 = string
 
-(*Convertir un affectable en code TAM *)
-let rec analyse_code_affectable a =
-  match a with 
-  | AstType.Ident info -> 
-    begin
-    match info_ast_to_info info with
-      |InfoVar (_,t,d,reg) -> Tam.load (getTaille t) (d) (reg), t
-      |InfoConst (_,i) -> Tam.loadl_int  i, Int
-      | _ -> failwith("mauvais info")
-    end
-  | AstType.Deref a -> 
-    let str, t = analyse_code_affectable a in
-    match t with
-      |Pointeur _ -> 
-        str^Tam.loadi (getTaille t), t
-      |_ -> failwith "Err"
-
-  let rec analyse_code_affectable2 a =
-    match a with 
-    | AstPlacement.Ident info -> 
-      begin
-        match info_ast_to_info info with
-          |InfoVar (_,t,d,reg) -> Tam.store (getTaille t) (d) (reg), t
-          | _ -> failwith("mauvais info")
-        end
-    | AstPlacement.Deref a -> 
-      let str, t = analyse_code_affectable2 a in
-      match t with
-        |Pointeur _ -> 
-          str^Tam.storei (getTaille t), t
-        |_ -> failwith "Err"
-
-
 
 
 (* analyser_code_expression : AstType.expression -> string *)
 (*Paramètre e : expression *)
 (* Renvoi le code TAM d'une expression *)
 let rec analyser_code_expression e =
-  begin
   match e with
   |AstType.Entier i -> Tam.loadl_int i
   |AstType.Booleen b -> 
@@ -103,9 +69,80 @@ let rec analyser_code_expression e =
   |AstType.Addr info -> 
     Tam.loadl_int (getAddr info)
 
-  | _ -> failwith ("todo")
-  end
+  | AstType.NewTab (t, e) ->
+    analyser_code_expression e ^              
+    Tam.loadl_int (getTaille t) ^
+    Tam.subr "IMul" ^
+    Tam.subr "MAlloc" ^                       
+    Tam.storei ((getTaille t)) ^                
+    Tam.loadl_int 1                          
+
+
+  | AstType.InitTab le ->
+      String.concat "" (List.map analyser_code_expression le)
+
+  | AstType.Tab t ->
+    begin
+      match t with
+        |Tab t2 -> 
+          Tam.loadl_int (getTaille t2) (*malloc*)
+        |_ -> failwith "ErrTab"
+    end
+  | _ -> failwith "todo"
   
+  (*Convertir un affectable en code TAM *)
+and analyse_code_affectable a =
+  match a with 
+  | AstType.Ident info -> 
+    begin
+    match info_ast_to_info info with
+      |InfoVar (_,t,d,reg) -> Tam.load (getTaille t) (d) (reg), t
+      |InfoConst (_,i) -> Tam.loadl_int  i, Int
+      | _ -> failwith("mauvais info")
+    end
+  | AstType.Deref a -> 
+    let str, t = analyse_code_affectable a in
+    begin
+      match t with
+        |Pointeur _ -> 
+          str^Tam.loadi (getTaille t), t
+        |_ -> failwith "Err"
+    end
+  | AstType.Access (a, e) -> 
+    let str, t = analyse_code_affectable a in
+    begin
+      match t with
+        |Tab t2 -> 
+          str^analyser_code_expression e^Tam.loadi (getTaille t2), t2
+        |_ -> failwith "Err"
+    end
+
+  and analyse_code_affectable2 a =
+    match a with 
+    | AstPlacement.Ident info -> 
+      begin
+        match info_ast_to_info info with
+          |InfoVar (_,t,d,reg) -> Tam.store (getTaille t) (d) (reg), t
+          | _ -> failwith("mauvais info")
+        end
+    | AstPlacement.Deref a -> 
+      let str, t = analyse_code_affectable2 a in
+      begin 
+        match t with
+          |Pointeur _ -> 
+            str^Tam.storei (getTaille t), t
+          |_ -> failwith "Err"
+        end
+    | AstPlacement.Access (a, e) ->
+      let str, t = analyse_code_affectable2 a in
+      begin
+        match t with
+          |Tab t2 -> 
+            str^analyser_code_expression e^Tam.storei (getTaille t2), t2
+          |_ -> failwith "Err"
+      end
+
+    
 (* analyser_code_instruction : AstPlacement.instruction -> string *)
 (*Paramètre i : instruction *)
 (* Renvoi le code TAM d'une instruction *)
@@ -122,11 +159,15 @@ let rec analyser_code_instruction i =
     | _ -> failwith("aupfzbvzegv" )
     end
   |AstPlacement.Affectation (a, e) -> 
-    analyser_code_expression e ^(
-    match a with 
-    | AstPlacement.Ident info -> 
-      Tam.store (getTaille (getType info)) (getAddr info) (getReg info)
-    | AstPlacement.Deref aff -> fst (analyse_code_affectable2 a))
+    analyser_code_expression e ^
+    begin 
+      match a with 
+      | AstPlacement.Ident info -> 
+        Tam.store (getTaille (getType info)) (getAddr info) (getReg info)
+      | AstPlacement.Deref _ -> fst (analyse_code_affectable2 a)
+      | AstPlacement.Access _ -> fst (analyse_code_affectable2 a)
+    end
+    
 
   |AstPlacement.TantQue (c, b) ->
     (*generer etiquette automatiquement*)

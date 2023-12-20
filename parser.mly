@@ -39,6 +39,8 @@ open Ast.AstSyntax
 %token NEW
 %token NULL
 %token AND
+%token TAB
+%token FOR
 
 (* Type de l'attribut synthétisé des non-terminaux *)
 %type <programme> prog
@@ -63,7 +65,7 @@ fonc : t=typ n=ID PO lp=separated_list(VIRG,param) PF li=bloc {Fonction(t,n,lp,l
 
 param : t=typ n=ID  {(t,n)}
 
-bloc : AO li=i* AF      {li}
+bloc : AO li=i* AF  {li}
 
 i :
 | t=typ n=ID EQUAL e1=e PV          {Declaration (t,n,e1)}
@@ -73,16 +75,20 @@ i :
 | IF exp=e li1=bloc ELSE li2=bloc   {Conditionnelle (exp,li1,li2)}
 | WHILE exp=e li=bloc               {TantQue (exp,li)}
 | RETURN exp=e PV                   {Retour (exp)}
+| FOR PO n=ID EQUAL e1=e PV e2=e PV n2=ID EQUAL e3=e PF b=bloc {For (n,e1,e2,n2,e3,b)}  
 
 a :
 | n = ID            {Ident n}
 | MULT aff=a        {Deref aff}  
+| PO aff=a CO e1=e CF PF  {Access (aff, e1)}
 
 typ :
 | BOOL          {Bool}
 | INT           {Int}
 | RAT           {Rat}
-| t=typ MULT   {Pointeur t} 
+| t=typ MULT    {Pointeur t} 
+| t=typ TAB       {Tab t}
+
 
 e : 
 | n=ID PO lp=separated_list(VIRG,e) PF   {AppelFonction (n,lp)}
@@ -101,4 +107,7 @@ e :
 | aff=a                   {Affectation aff}
 | AND n=ID                {Addr n}  
 | NULL                    {Null} 
+| PO NEW t=typ CO e1=e CF PF   {NewTab (t,e1)}
+| AO lp=separated_list(VIRG,e) AF   {InitTab lp}
+
 

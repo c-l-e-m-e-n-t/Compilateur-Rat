@@ -8,23 +8,6 @@ open Type
 type t1 = Ast.AstTds.programme
 type t2 = Ast.AstType.programme  
 
-let rec analyse_type_affectable a =
-  match a with
-  |AstTds.Ident info -> 
-    begin
-    match info_ast_to_info info with
-      |Tds.InfoVar(_,t,_,_) -> (AstType.Ident info,t)
-      |Tds.InfoFun _ -> failwith ("pas id")
-      |Tds.InfoConst _ -> (AstType.Ident info, Int)
-    end
-  |AstTds.Deref aff ->
-    (match analyse_type_affectable aff with
-    | (naff, Pointeur(t)) -> (AstType.Deref(naff),t)
-    |_ -> failwith("err"))
-
-
-
-
 (* analyse_type_expression : AstTds.expression -> AstType.expression*typ *)
 (* Paramètre e : une expression*)
 (* Vérifie la bonne utilisation des types dans les expressions *)
@@ -83,13 +66,59 @@ match e with
     else 
       raise(TypesParametresInattendus (tp, lt))  
 
+  |AstTds.NewTab (t,e) ->
+    let (ne, te) = analyse_type_expression e in
+    if est_compatible te Int then
+      AstType.NewTab(t, ne), Tab(t)
+    else raise(TypeInattendu (te, Int))
+
   |AstTds.New t -> (AstType.New t , Pointeur t)
+
   |AstTds.Addr info_ast -> (AstType.Addr(info_ast), Pointeur(getType info_ast))
+
   |AstTds.Null -> (AstType.Null, Pointeur(Undefined))
+
   |AstTds.Affectation a -> let (na, ta) = analyse_type_affectable a in 
                           (AstType.Affectable na, ta)
-  |AstTds.Affectable _ -> failwith("") (*todo suppr cette merde*)
 
+  |AstTds.Affectable _ -> failwith("") (*todo suppr cette merde*)
+  
+  |AstTds.InitTab le ->
+    let l = List.map analyse_type_expression le in
+    let mle = List.map fst l in
+    let lt = List.map snd l in
+    let t = List.hd lt in
+    if est_compatible_list2 t lt then
+      (AstType.InitTab(mle), Tab(t))
+    else raise(TypesParametresInattendus (lt, [t]))
+    
+  |AstTds.Tab t ->
+    AstType.Tab t, Tab(t)
+
+  and analyse_type_affectable a =
+    match a with
+    |AstTds.Ident info -> 
+      begin
+      match info_ast_to_info info with
+        |Tds.InfoVar(_,t,_,_) -> (AstType.Ident info,t)
+        |Tds.InfoFun _ -> failwith ("pas id")
+        |Tds.InfoConst _ -> (AstType.Ident info, Int)
+      end
+    |AstTds.Deref aff ->
+      (match analyse_type_affectable aff with
+      | (naff, Pointeur(t)) -> (AstType.Deref(naff),t)
+      |_ -> failwith("err"))
+    |AstTds.Access (aff, e) ->
+      let (naff, t) = analyse_type_affectable aff in
+      let (ne, te) = analyse_type_expression e in
+      begin
+        match (naff, t) with
+        |naff, Tab tcase -> 
+          if est_compatible Int te then
+            (AstType.Access(naff, ne), tcase) 
+          else raise(TypeInattendu (t, te))
+        |_ -> raise(TypeInattendu (te, Int))
+      end
 
 (* analyse_type_instruction : AstTds.instruction -> AstType.instruction *)
 (* Paramètre i : une instruction*)

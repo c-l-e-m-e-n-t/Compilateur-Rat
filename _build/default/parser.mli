@@ -5,6 +5,7 @@ type token =
   | WHILE
   | VIRG
   | TRUE
+  | TAB
   | SLASH
   | RETURN
   | RAT
@@ -21,6 +22,7 @@ type token =
   | INF
   | IF
   | ID of (string)
+  | FOR
   | FALSE
   | EQUAL
   | EOF

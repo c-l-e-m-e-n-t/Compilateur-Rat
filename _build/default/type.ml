@@ -1,6 +1,4 @@
-type typ = Bool | Int | Rat | Undefined | Pointeur of typ | Null 
-
-type affectable = Ident of string | Deref of affectable 
+type typ = Bool | Int | Rat | Undefined | Pointeur of typ | Tab of typ | Null 
 
 let rec string_of_type t = 
   match t with
@@ -10,6 +8,7 @@ let rec string_of_type t =
   | Undefined -> "Undefined"
   | Pointeur p -> "Adress"^(string_of_type p)
   | Null -> "Null" 
+  | Tab t -> "Tab"^(string_of_type t)
 
 
 let rec est_compatible t1 t2 =
@@ -20,6 +19,8 @@ let rec est_compatible t1 t2 =
   | Pointeur _, Null -> true
   | Null, Pointeur _ -> true
   | Pointeur(typ1), Pointeur(typ2) -> est_compatible typ1 typ2 
+  | Tab(typ1), Tab(typ2) -> est_compatible typ1 typ2
+  | Tab(typ1), Int -> est_compatible typ1 Int
   | _ -> false 
 
 let%test _ = est_compatible Bool Bool
@@ -38,6 +39,11 @@ let%test _ = not (est_compatible Bool Undefined)
 let%test _ = not (est_compatible Undefined Int)
 let%test _ = not (est_compatible Undefined Rat)
 let%test _ = not (est_compatible Undefined Bool)
+
+let est_compatible_list2 t1 lt2 =
+  try
+    List.for_all (est_compatible t1) lt2
+  with Invalid_argument _ -> false
 
 let est_compatible_list lt1 lt2 =
   try
@@ -60,6 +66,7 @@ let getTaille t =
   | Undefined -> 0
   | Pointeur _ -> 1
   | Null -> 0 
+  | Tab _ -> 1
   
 let%test _ = getTaille Int = 1
 let%test _ = getTaille Bool = 1

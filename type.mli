@@ -1,8 +1,5 @@
 (* Types manipulés dans Rat *)
-type typ = Bool | Int | Rat | Undefined |Pointeur of typ | Null 
-
-(* Types manipulés par les Addrs *)
-type affectable = Ident of string | Deref of affectable 
+type typ = Bool | Int | Rat | Undefined |Pointeur of typ | Tab of typ |Null 
 
 (* string_of_type :  typ -> string *)
 (* transforme un typ en chaîne de caractère *)
@@ -13,6 +10,10 @@ val string_of_type : typ -> string
 (* c'est à dire qu'un élèment du second type peut être affecté *)
 (* à un élément du premier type *)
 val est_compatible : typ -> typ -> bool
+
+(* est_compatible_list : typ list -> typ list -> bool *)
+(* vérifie si les types sont compatibles deux à deux *)
+val est_compatible_list2 : typ -> typ list -> bool
 
 (* est_compatible_list : typ list -> typ list -> bool *)
 (* vérifie si les types sont compatibles deux à deux *)

@@ -18,11 +18,6 @@ let get_Taille i =
  | _ -> 0   
 
 
- let rec analyse_placement_affectable a =
-  match a with
-    |AstType.Ident info -> AstPlacement.Ident(info)
-    |AstType.Deref aff -> analyse_placement_affectable aff
-
 (* analyse_placement_instruction : instruction -> Int -> String -> Instruction*Int *)
 (* Paramètre i : une instruction *)
 (* Paramètre depl : un integer symbolisant le déplacement *)
@@ -64,6 +59,12 @@ let rec analyse_placement_instruction i depl reg =
     (AstPlacement.AffichageRat e, 0)
   |AstType.Empty ->
     (AstPlacement.Empty, 0)
+
+    and analyse_placement_affectable a =
+      match a with
+        |AstType.Ident info -> AstPlacement.Ident(info)
+        |AstType.Deref aff -> analyse_placement_affectable aff
+        |AstType.Access (aff, e) -> AstPlacement.Access(analyse_placement_affectable aff, e)
 
 (* analyse_placement_bloc : instruction list -> Int -> String -> bloc *)
 (* Paramètre li : une liste d'instructions *)

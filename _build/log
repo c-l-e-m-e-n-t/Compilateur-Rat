@@ -1,10 +1,10 @@
-# dune runtest
+# dune runtest tests/gestion_id/sans_fonction/
 # OCAMLPARAM: unset
 # Shared cache: disabled
 # Workspace root:
 # /home/ccognard/Annee2/Programmation_Fonctionnelle/Projet/Compilateur-Rat
 # Auto-detected concurrency: 4
-$ /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -config > /tmp/dune_92cc59_output
+$ /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -config > /tmp/dune_dd275d_output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -112,4 +112,22 @@ $ /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -config > /tmp/dune_92cc59_out
 #      ; windows_unicode = false
 #      }
 #  }
-$ (cd _build/default/tests/tam/avec_fonction && .avec_fonction_tam.inline-tests/inline_test_runner_avec_fonction_tam.exe inline-test-runner avec_fonction_tam -source-tree-root ../../.. -diff-cmd -)
+$ (cd _build/default/tests/gestion_id/sans_fonction && .sans_fonction_id.inline-tests/inline_test_runner_sans_fonction_id.exe inline-test-runner sans_fonction_id -source-tree-root ../../.. -diff-cmd -)
+> File "../../../../../tests/gestion_id/sans_fonction/fichiersRat/testFor.rat", line 2, characters 10-13: syntax error.
+> File "tests/gestion_id/sans_fonction/test.ml", line 19, characters 0-83: testFor threw Rat.Parser.MenhirBasics.Error.
+>   Raised at Rat__Parser.MenhirBasics._eRR in file "parser.ml" (inlined), line 8, characters 6-17
+>   Called from Rat__Parser._menhir_run_091 in file "parser.ml", line 1716, characters 14-21
+>   Called from Rat__Compilateur.compiler in file "compilateur.ml", line 94, characters 14-45
+>   Re-raised at Rat__Compilateur.compiler in file "compilateur.ml", line 102, characters 6-13
+>   Called from Sans_fonction_id__Test.(fun) in file "tests/gestion_id/sans_fonction/test.ml", line 20, characters 10-50
+>
+> File "../../../../../tests/gestion_id/sans_fonction/fichiersRat/testTab1.rat", line 3, characters 31-32: syntax error.
+> File "tests/gestion_id/sans_fonction/test.ml", line 22, characters 0-85: testTab1 threw Rat.Parser.MenhirBasics.Error.
+>   Raised at Rat__Parser.MenhirBasics._eRR in file "parser.ml" (inlined), line 8, characters 6-17
+>   Called from Rat__Parser._menhir_run_060 in file "parser.ml", line 2283, characters 10-17
+>   Called from Rat__Compilateur.compiler in file "compilateur.ml", line 94, characters 14-45
+>   Re-raised at Rat__Compilateur.compiler in file "compilateur.ml", line 102, characters 6-13
+>   Called from Sans_fonction_id__Test.(fun) in file "tests/gestion_id/sans_fonction/test.ml", line 23, characters 10-51
+>
+> FAILED 2 / 24 tests
+[2]
