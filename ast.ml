@@ -40,8 +40,6 @@ type expression =
   | New of typ
   (* Addr *)
   | Addr of string
-  (* ** *)
-  | Affectable of affectable
   (* Affectation d'un Addr *)
   | Affectation of affectable 
   (* Tableaux *)
@@ -73,7 +71,11 @@ and instruction =
   (* return d'une fonction *)
   | Retour of expression
   (* Boucle For *)
-  | For of string * expression * expression * string * expression * bloc
+  | For of typ * string * expression * expression * string * expression * bloc
+  (*Instruction goto*)
+  | Goto of string
+  (*Etiquette Goto*)
+  | Label of string
 
 (* Structure des fonctions de Rat *)
 (* type de retour - nom - liste des paramètres (association type et nom) - corps de la fonction *)
@@ -103,7 +105,6 @@ struct
     | Null
     | New of typ
     | Addr of Tds.info_ast
-    | Affectable of affectable
     | Affectation of affectable
     | Tab of typ
     | NewTab of typ * expression
@@ -125,7 +126,11 @@ struct
     | TantQue of expression * bloc
     | Retour of expression * Tds.info_ast  (* les informations sur la fonction à laquelle est associé le retour *)
     | Empty (* les nœuds ayant disparus: Const *)
-    | For of Tds.info_ast * expression * expression * Tds.info_ast * expression * bloc
+    | For of typ * Tds.info_ast * expression * expression * expression * bloc
+    (*Instruction goto*)
+    | Goto of Tds.info_ast
+    (*Etiquette Goto*)
+    | Label of Tds.info_ast
 
   (* Structure des fonctions dans notre langage *)
   (* type de retour - informations associées à l'identificateur (dont son nom) - liste des paramètres (association type et information sur les paramètres) - corps de la fonction *)
@@ -160,8 +165,7 @@ type expression =
   | Null
   | New of typ
   | Addr of Tds.info_ast
-  | Affectable of affectable 
-  | Affectation of affectable * expression
+  | Affectation of affectable
   | Tab of typ
   | NewTab of typ * expression
   | InitTab of expression list
@@ -182,7 +186,11 @@ type bloc = instruction list
   | TantQue of expression * bloc
   | Retour of expression * Tds.info_ast
   | Empty (* les nœuds ayant disparus: Const *)
-  | For of Tds.info_ast * expression * expression * Tds.info_ast * expression * bloc
+  | For of Tds.info_ast * expression * expression * expression * bloc
+  (*Instruction goto*)
+  | Goto of Tds.info_ast
+  (*Etiquette Goto*)
+  | Label of Tds.info_ast
 
 (* informations associées à l'identificateur (dont son nom), liste des paramètres, corps *)
 type fonction = Fonction of Tds.info_ast * Tds.info_ast list * bloc
@@ -218,7 +226,11 @@ type bloc = instruction list * int (* taille du bloc *)
  | TantQue of expression * bloc
  | Retour of expression * int * int (* taille du retour et taille des paramètres *)
  | Empty (* les nœuds ayant disparus: Const *)
- | For of Tds.info_ast * expression * expression * Tds.info_ast * expression * bloc
+ | For of Tds.info_ast * expression * expression * expression * bloc
+ (*Instruction goto*)
+ | Goto of Tds.info_ast
+ (*Etiquette Goto*)
+ | Label of Tds.info_ast
 
 (* informations associées à l'identificateur (dont son nom), liste de paramètres, corps, expression de retour *)
 (* Plus besoin de la liste des paramètres mais on la garde pour les tests du placements mémoire *)

@@ -1,0 +1,11 @@
+main {
+    const a = 40; 
+    goto etiq;
+    if(a < 5) {
+        etiq : 
+        print a;
+    }
+    else {
+        print a;
+    }
+}

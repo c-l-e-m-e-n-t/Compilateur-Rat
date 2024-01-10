@@ -7,6 +7,34 @@ open Ast
 type t1 = Ast.AstSyntax.programme
 type t2 = Ast.AstTds.programme
 
+(* récupere tous les labels liés aux goto pour éviter que le goto dise qu'un label est non déclaré lorsque ce n'est pas le cas*)
+let rec collect_labels tds prog = 
+  match prog with
+  |[] -> []
+  |(AstSyntax.Label (n))::q -> 
+    begin 
+    match chercherGlobalement tds n with
+    |Some _ -> raise (DoubleDeclaration n)
+    |None -> 
+      let info = InfoEtiquette (n) in
+      let ia = info_to_info_ast info in
+      ajouter tds n ia;
+      let labels = collect_labels tds q in
+      ia::labels
+    end
+  |AstSyntax.For (_,_,_,_,_,_,b)::q -> 
+    let labels = collect_labels tds b in
+    let labels2 = collect_labels tds q in
+    labels@labels2
+  |AstSyntax.Conditionnelle (_,b1,b2)::q ->
+    let labels = collect_labels tds (b1@b2@q) in
+    labels
+  |AstSyntax.TantQue (_,b)::q ->
+    let labels = collect_labels tds b in
+    let labels2 = collect_labels tds q in
+    labels@labels2
+  |_::q -> collect_labels tds q
+
 
 (* analyse_tds_expression : tds -> AstSyntax.expression -> AstTds.expression *)
 (* Paramètre tds : la table des symboles courante *)
@@ -26,11 +54,13 @@ let rec analyse_tds_expression tds e =
     end
   |AstSyntax.AppelFonction(s, ne) ->
     begin
-      
+        (*rechercher dans la tds pour vérifier que l'identifiant est bien déclaré*)
         match chercherGlobalement tds s with
         |Some info ->(
+          (*on traite l'info et on vérifie que cela corresponds bien a une fonction *)
           match info_ast_to_info info with
           |InfoFun _ -> 
+            (*on analyse tous les éléments de la fonction*)
             let n1 = List.map (analyse_tds_expression tds) ne in
             AstTds.AppelFonction(info, n1)
           | _  -> raise (MauvaiseUtilisationIdentifiant s))
@@ -39,12 +69,14 @@ let rec analyse_tds_expression tds e =
     end
   |AstSyntax.Binaire (b, e1, e2) ->
     begin
+      (*on analyse chaque coté du binaire*)
       let n1 = analyse_tds_expression tds e1 in
       let n2 = analyse_tds_expression tds e2 in
       AstTds.Binaire(b,n1, n2)
     end 
   |AstSyntax.Unaire (u, ne) ->
     begin
+      (*on analyse l'expression*)
       let n1 = analyse_tds_expression tds ne in
       AstTds.Unaire(u, n1)
     end
@@ -56,9 +88,11 @@ let rec analyse_tds_expression tds e =
     AstTds.Null
   |AstSyntax.Addr id ->
     begin 
+      (*on recherche dans la tds pour verifier que l'id est bien déclaré *)
       match Tds.chercherGlobalement tds id with  
       |Some info -> 
         begin 
+          (*on vérifie que l'info est bien une infovar*)
           match info_ast_to_info info with
           | InfoVar _ -> AstTds.Addr(info)
           | _ -> raise (MauvaiseUtilisationIdentifiant id) 
@@ -68,6 +102,7 @@ let rec analyse_tds_expression tds e =
     end  
   |AstSyntax.NewTab (t, ne) ->
     begin
+      (*on analye l'expression du tableau*)
       let n1 = analyse_tds_expression tds ne in
       AstTds.NewTab(t, n1)
     end
@@ -78,14 +113,16 @@ let rec analyse_tds_expression tds e =
     end
   |AstSyntax.Tab t ->
     AstTds.Tab t
-  | _ -> failwith ("cas non traité") 
 
   and analyse_tds_affectable a tds modif =
     match a with
     | AstSyntax.Ident id -> 
       begin
+        (*in vérifie que l'identifiant est bien déclaré*)
         match chercherGlobalement tds id with
-        | Some info -> begin
+        | Some info -> 
+          begin
+          (*on vérifie que l'info est bien une infovar ou une infoconst*)
           match info_ast_to_info info with 
           |InfoVar _ -> AstTds.Ident info
           |InfoConst _ -> 
@@ -98,10 +135,12 @@ let rec analyse_tds_expression tds e =
         | None -> raise (IdentifiantNonDeclare id)
         end
     | AstSyntax.Deref aff -> 
+      (*on vérifie l'affectable*)
       let aff = analyse_tds_affectable aff tds modif
         in AstTds.Deref aff
     |AstSyntax.Access (a, e2) ->
       begin
+        (*on vérifie l'affectable et l'expression*)
         let n1 = analyse_tds_affectable a tds false in
         let n2 = analyse_tds_expression tds e2 in
         AstTds.Access(n1, n2)
@@ -115,32 +154,34 @@ let rec analyse_tds_expression tds e =
 (* Vérifie la bonne utilisation des identifiants et tranforme l'instruction
 en une instruction de type AstTds.instruction *)
 (* Erreur si mauvaise utilisation des identifiants *)
-let rec analyse_tds_instruction tds oia i =
+let rec analyse_tds_instruction tdsE tds oia i =
   match i with
   | AstSyntax.Declaration (t, n, e) ->
-      begin
-        match chercherLocalement tds n with
-        | None ->
-            (* L'identifiant n'est pas trouvé dans la tds locale,
-            il n'a donc pas été déclaré dans le bloc courant *)
-            (* Vérification de la bonne utilisation des identifiants dans l'expression *)
-            (* et obtention de l'expression transformée *)
-            let ne = analyse_tds_expression tds e in
-            (* Création de l'information associée à l'identfiant *)
-            let info = InfoVar (n,Undefined, 0, "") in
-            (* Création du Addr sur l'information *)
-            let ia = info_to_info_ast info in
-            (* Ajout de l'information (Addr) dans la tds *)
-            ajouter tds n ia;
-            (* Renvoie de la nouvelle déclaration où le nom a été remplacé par l'information
-            et l'expression remplacée par l'expression issue de l'analyse *)
-            AstTds.Declaration (t, ia, ne)
-        | Some _ ->
-            (* L'identifiant est trouvé dans la tds locale,
-            il a donc déjà été déclaré dans le bloc courant *)
-            raise (DoubleDeclaration n)
-      end
+    begin
+      match chercherLocalement tds n with
+      | None ->
+          (* L'identifiant n'est pas trouvé dans la tds locale,
+          il n'a donc pas été déclaré dans le bloc courant *)
+          (* Vérification de la bonne utilisation des identifiants dans l'expression *)
+          (* et obtention de l'expression transformée *)
+          let ne = analyse_tds_expression tds e in
+          (* Création de l'information associée à l'identfiant *)
+          let info = InfoVar (n,Undefined, 0, "") in
+          (* Création du Addr sur l'information *)
+          let ia = info_to_info_ast info in
+          (* Ajout de l'information (Addr) dans la tds *)
+          ajouter tds n ia;
+          (* Renvoie de la nouvelle déclaration où le nom a été remplacé par l'information
+          et l'expression remplacée par l'expression issue de l'analyse *)
+          AstTds.Declaration (t, ia, ne)
+      | Some _ ->
+          (* L'identifiant est trouvé dans la tds locale,
+          il a donc déjà été déclaré dans le bloc courant *)
+          raise (DoubleDeclaration n)
+    end
   | AstSyntax.Affectation (a,e) ->
+      (* Vérification de la bonne utilisation des identifiants dans l'affectable *)
+      (* et obtention de l'affectable transformé *)
       let na = analyse_tds_affectable a tds false in
       let ne = analyse_tds_expression tds e in
       AstTds.Affectation (na,ne)
@@ -169,16 +210,16 @@ let rec analyse_tds_instruction tds oia i =
       (* Analyse de la condition *)
       let nc = analyse_tds_expression tds c in
       (* Analyse du bloc then *)
-      let tast = analyse_tds_bloc tds oia t in
+      let tast = analyse_tds_bloc tdsE tds oia t in
       (* Analyse du bloc else *)
-      let east = analyse_tds_bloc tds oia e in
+      let east = analyse_tds_bloc tdsE tds oia e in
       (* Renvoie la nouvelle structure de la conditionnelle *)
       AstTds.Conditionnelle (nc, tast, east)
   | AstSyntax.TantQue (c,b) ->
       (* Analyse de la condition *)
       let nc = analyse_tds_expression tds c in
       (* Analyse du bloc *)
-      let bast = analyse_tds_bloc tds oia b in
+      let bast = analyse_tds_bloc tdsE tds oia b in
       (* Renvoie la nouvelle structure de la boucle *)
       AstTds.TantQue (nc, bast)
   | AstSyntax.Retour (e) ->
@@ -193,32 +234,48 @@ let rec analyse_tds_instruction tds oia i =
         (* Il n'y a pas d'information -> l'instruction est dans le bloc principal : erreur *)
       | None -> raise RetourDansMain
       end
-  | AstSyntax.For (n1,e1,e2,n2,e3,b) -> 
+  | AstSyntax.For (t,n1,e1,e2,_,e3,b) -> 
     begin
+    (* on vérifie que la variable n'a pas été deja utilisé localement (normalement c'est pas vraiment possible)*)
     match chercherLocalement tds n1 with
       | None ->
+        (* L'identifiant n'est pas trouvé dans la tds locale,
+          il n'a donc pas été déclaré dans le bloc courant *)
+        (* Création de l'information associée à l'identfiant *)
         let info1 = InfoVar (n1,Undefined, 0, "") in
         let ia1 = info_to_info_ast info1 in
+        (* Ajout de l'information dans la tds *)
         ajouter tds n1 ia1;
-        begin
-        match chercherLocalement tds n1 with
-        | None ->
-            let info2 = InfoVar (n1,Undefined, 0, "") in
-            let ia2 = info_to_info_ast info2 in
-            ajouter tds n2 ia2;
-            let ec1 = analyse_tds_expression tds e1 in
-            let ec2 = analyse_tds_expression tds e2 in
-            let ec3 = analyse_tds_expression tds e3 in
-            let bl = analyse_tds_bloc tds oia b in
-            AstTds.For (ia1,ec1,ec2,ia2,ec3,bl)
-        | Some _ ->
-            raise (DoubleDeclaration n2)
-        end
+        (*on analyse toutes les expressions ainsi que le bloc qui composent notre boucle for*)
+        let ec1 = analyse_tds_expression tds e1 in
+        let ec2 = analyse_tds_expression tds e2 in
+        let ec3 = analyse_tds_expression tds e3 in
+        let bl = analyse_tds_bloc tdsE tds oia b in
+        AstTds.For (t,ia1,ec1,ec2,ec3,bl)
       | Some _ ->
           raise (DoubleDeclaration n1)
       end
-    
-
+  | AstSyntax.Goto (n) ->
+    begin
+      (*on vérifie que l'étiquette existe*)
+      match chercherGlobalement tdsE n with
+      |Some info ->(
+        (*on vérifie que l'info est bien une infoetiquette*)
+        match info_ast_to_info info with
+        |InfoEtiquette _ -> AstTds.Goto(info)
+        |_ -> raise (MauvaiseUtilisationIdentifiant n))
+      |None -> raise (IdentifiantNonDeclare n)
+    end   
+  | AstSyntax.Label (n) ->
+    begin
+      match chercherGlobalement tdsE n with
+      |Some _ -> 
+        (*on crée l'infoetiquette*)
+        let info = InfoEtiquette (n) in
+        let ia = info_to_info_ast info in
+        AstTds.Label(ia)
+      |None -> failwith("erreur label")
+    end
 
 (* analyse_tds_bloc : tds -> info_ast option -> AstSyntax.bloc -> AstTds.bloc *)
 (* Paramètre tds : la table des symboles courante *)
@@ -227,13 +284,13 @@ let rec analyse_tds_instruction tds oia i =
 (* Paramètre li : liste d'instructions à analyser *)
 (* Vérifie la bonne utilisation des identifiants et tranforme le bloc en un bloc de type AstTds.bloc *)
 (* Erreur si mauvaise utilisation des identifiants *)
-and analyse_tds_bloc tds oia li =
+and analyse_tds_bloc tdsE tds oia li =
   (* Entrée dans un nouveau bloc, donc création d'une nouvelle tds locale
   pointant sur la table du bloc parent *)
   let tdsbloc = creerTDSFille tds in
   (* Analyse des instructions du bloc avec la tds du nouveau bloc.
      Cette tds est modifiée par effet de bord *)
-   let nli = List.map (analyse_tds_instruction tdsbloc oia) li in
+   let nli = List.map (analyse_tds_instruction tdsE tdsbloc oia) li in
    (* afficher_locale tdsbloc ; *) (* décommenter pour afficher la table locale *)
    nli
 
@@ -260,6 +317,10 @@ let analyse_tds_fonction maintds (AstSyntax.Fonction(t,n,lp,li))  =
     raise(DoubleDeclaration n)
   |None -> 
     let tdsF = creerTDSFille maintds in
+    let tdsE = creerTDSMere () in
+    (* collecte des labels pour le bon fonctionnement des goto*)
+    (* pour les goto *)
+    let _ = collect_labels tdsE li in
     (* Création de l'information associée à l'identfiant *)
     let info = InfoFun (n,t, List.map fst lp) in
     (* Création du Addr sur l'information *)
@@ -268,7 +329,7 @@ let analyse_tds_fonction maintds (AstSyntax.Fonction(t,n,lp,li))  =
     ajouter maintds n ia;
     (*fonction aux pr traiter un param *)
     let b = traite_p tdsF lp in
-    let nb = analyse_tds_bloc tdsF (Some ia) li in
+    let nb = analyse_tds_bloc tdsE tdsF (Some ia) li in
     AstTds.Fonction(t, ia, b, nb) 
 
 
@@ -280,6 +341,10 @@ en un programme de type AstTds.programme *)
 (* Erreur si mauvaise utilisation des identifiants *)
 let analyser (AstSyntax.Programme (fonctions,prog)) =
   let tds = creerTDSMere () in
+  let tdsE = creerTDSMere () in
+  (* collecte des labels pour le bon fonctionnement des goto*)
+  (* pour les goto *)
+  let _ = collect_labels tdsE prog in
   let nf = List.map (analyse_tds_fonction tds) fonctions in
-  let nb = analyse_tds_bloc tds None prog in
+  let nb = analyse_tds_bloc tdsE tds None prog in
   AstTds.Programme (nf,nb)

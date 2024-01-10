@@ -43,8 +43,10 @@ match e with
     (AstType.Entier ent, Int)
 
   |AstTds.Unaire (un, exp) ->  
+    (*on analyse l'expression*)
     let(ne, te) = analyse_type_expression exp in
     begin
+      (*verification du type*)
       match te with
       |Rat -> 
         begin
@@ -58,9 +60,11 @@ match e with
   |AstTds.AppelFonction (infoast, le) ->
     let tr = getType infoast in 
     let tp = getTypeParam infoast in
+    (*analyse du type de toutes les expression de la fonction*)
     let l = List.map analyse_type_expression le in
     let mle = List.map fst l in
     let lt = List.map snd l in
+    (*verification de la compatibilité des types des paramètres de la fonction*)
     if est_compatible_list tp lt then
       (AstType.AppelFonction(infoast, mle), tr) 
     else 
@@ -68,43 +72,60 @@ match e with
 
   |AstTds.NewTab (t,e) ->
     let (ne, te) = analyse_type_expression e in
+    (*on verifie que le type de te est bien un int car il corresponds a la longueur du tableau*)
     if est_compatible te Int then
       AstType.NewTab(t, ne), Tab(t)
     else raise(TypeInattendu (te, Int))
 
-  |AstTds.New t -> (AstType.New t , Pointeur t)
+  |AstTds.New t -> 
+    (* Verification de l'utilisation du bon type dans l'expression *)
+    (* Obtention de l'expression transformée *)
+    (AstType.New t , Pointeur t)
 
-  |AstTds.Addr info_ast -> (AstType.Addr(info_ast), Pointeur(getType info_ast))
+  |AstTds.Addr info_ast -> 
+    (* Verification de l'utilisation du bon type dans l'expression *)
+    (* Obtention de l'expression transformée *)
+    (AstType.Addr(info_ast), Pointeur(getType info_ast))
 
-  |AstTds.Null -> (AstType.Null, Pointeur(Undefined))
+  |AstTds.Null -> 
+    (* Verification de l'utilisation du bon type dans l'expression *)
+    (* Obtention de l'expression transformée *)
+    (AstType.Null, Pointeur(Undefined))
 
-  |AstTds.Affectation a -> let (na, ta) = analyse_type_affectable a in 
-                          (AstType.Affectable na, ta)
-
-  |AstTds.Affectable _ -> failwith("") (*todo suppr cette merde*)
+  |AstTds.Affectation a -> 
+    (*on anayse le type de l'affectable*)
+    let (na, ta) = analyse_type_affectable a in 
+    (AstType.Affectation na, ta)
   
   |AstTds.InitTab le ->
+    (*on analyse le type de toutes les expressions du tableau*)
     let l = List.map analyse_type_expression le in
     let mle = List.map fst l in
     let lt = List.map snd l in
     let t = List.hd lt in
+    (*on verifie que tous les types sont compatibles dans le tableau mais comme on a pas acces a l'info c'est pas tres opti*)
     if est_compatible_list2 t lt then
       (AstType.InitTab(mle), Tab(t))
     else raise(TypesParametresInattendus (lt, [t]))
     
   |AstTds.Tab t ->
+    (* Verification de l'utilisation du bon type dans l'expression *)
+    (* Obtention de l'expression transformée *)
     AstType.Tab t, Tab(t)
 
   and analyse_type_affectable a =
     match a with
     |AstTds.Ident info -> 
       begin
+      (*vérification du type d'un identifiant*)
       match info_ast_to_info info with
         |Tds.InfoVar(_,t,_,_) -> (AstType.Ident info,t)
         |Tds.InfoFun _ -> failwith ("pas id")
         |Tds.InfoConst _ -> (AstType.Ident info, Int)
+        |Tds.InfoEtiquette _ -> failwith ("pas id")
       end
     |AstTds.Deref aff ->
+      (*verification que l'on a bien un pointeur*)
       (match analyse_type_affectable aff with
       | (naff, Pointeur(t)) -> (AstType.Deref(naff),t)
       |_ -> failwith("err"))
@@ -112,6 +133,7 @@ match e with
       let (naff, t) = analyse_type_affectable aff in
       let (ne, te) = analyse_type_expression e in
       begin
+      (*verification que l'on a bien un tableau et que l'expression est bien un int*)
         match (naff, t) with
         |naff, Tab tcase -> 
           if est_compatible Int te then
@@ -129,6 +151,8 @@ let rec analyse_type_instruction i =
   |AstTds.Affichage e -> 
     begin
     let ne,te = analyse_type_expression e in
+    (* Verification de l'utilisation du bon type dans l'expression *)
+    (* Obtention de l'expression transformée *)
     match te with 
     |Int -> AstType.AffichageInt (ne)
     |Rat -> AstType.AffichageRat (ne)
@@ -139,6 +163,7 @@ let rec analyse_type_instruction i =
 
   |AstTds.Declaration (t, infoast, e) -> 
     let(ne, te) = analyse_type_expression e in 
+    (*verification du type de l'expression par rapport au type attendu*)
     if est_compatible t te then
       let _ = modifier_type_variable te infoast in
       AstType.Declaration(infoast, ne) 
@@ -147,6 +172,7 @@ let rec analyse_type_instruction i =
 
   |AstTds.Conditionnelle (c, b1, b2) -> 
     let(nc, tc) = analyse_type_expression c in 
+    (*on verifie que l'on a bien un booleen comme condition*)
     if est_compatible tc Bool then
       let nb1 = analyse_type_bloc b1 in
       let nb2 = analyse_type_bloc b2 in
@@ -155,6 +181,7 @@ let rec analyse_type_instruction i =
    
   |TantQue (e, b)-> 
     let(ne, te) = analyse_type_expression e in
+    (*on verifie que l'on a bien un booleen comme condition*)
     if est_compatible te Bool then
       let nb = analyse_type_bloc b in
       AstType.TantQue (ne,nb)
@@ -162,6 +189,7 @@ let rec analyse_type_instruction i =
   
   |Retour (e, i) ->
     let(ne, te) = analyse_type_expression e in
+    (*on verifie que le type de l'expression est bien compatible avec le type de retour de la fonction*)
     if est_compatible te (getType i) then
       AstType.Retour (ne,i)
     else 
@@ -172,10 +200,31 @@ let rec analyse_type_instruction i =
   |AstTds.Affectation (aff, e) -> 
     let (na, ta) = analyse_type_affectable aff in
     let (ne, te)= analyse_type_expression e in 
+    (*on verifie que le type de l'expression est bien compatible avec le type de l'affectable*)
     if (est_compatible te ta) then 
       AstType.Affectation (na, ne)
     else
       raise (TypeInattendu (te, ta))
+
+  |AstTds.For (t,ia, ec1, ec2, ec3, b) ->
+    if (est_compatible(Int) t) then
+      let _ = modifier_type_variable t ia in
+      let (nec1, ntc1) = analyse_type_expression ec1 in
+      let (nec2, ntc2) = analyse_type_expression ec2 in
+      let (nec3, ntc3) = analyse_type_expression ec3 in
+      (*on verifie  que le variant de boucle est un int, que la confition d'arret est bien un booléen ainsi que le type de l'incrémentation de la boicle*)
+      if (est_compatible ntc1 Int) && (est_compatible ntc2 Bool) && (est_compatible ntc3 Int) then
+        let nb = analyse_type_bloc b in
+        AstType.For (ia, nec1, nec2, nec3, nb)
+      else
+        raise (TypeInattendu (ntc1, Int))
+    else
+      raise (TypeInattendu (t, Int))
+  |AstTds.Goto i -> 
+    AstType.Goto i
+  |AstTds.Label i -> 
+    AstType.Label i
+  
 
 (* analyse_type_bloc : AstTds.bloc -> AstType.bloc *)
 (* Paramètre li : une instruction list*)

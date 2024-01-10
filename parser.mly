@@ -41,6 +41,8 @@ open Ast.AstSyntax
 %token AND
 %token TAB
 %token FOR
+%token GOTO
+%token DP
 
 (* Type de l'attribut synthétisé des non-terminaux *)
 %type <programme> prog
@@ -67,6 +69,11 @@ param : t=typ n=ID  {(t,n)}
 
 bloc : AO li=i* AF  {li}
 
+a :
+| n = ID            {Ident n}
+| MULT aff=a        {Deref aff}  
+| PO aff=a CO e1=e CF PF  {Access (aff, e1)}
+
 i :
 | t=typ n=ID EQUAL e1=e PV          {Declaration (t,n,e1)}
 | n=a EQUAL e1=e PV                 {Affectation (n,e1)}
@@ -75,19 +82,17 @@ i :
 | IF exp=e li1=bloc ELSE li2=bloc   {Conditionnelle (exp,li1,li2)}
 | WHILE exp=e li=bloc               {TantQue (exp,li)}
 | RETURN exp=e PV                   {Retour (exp)}
-| FOR PO n=ID EQUAL e1=e PV e2=e PV n2=ID EQUAL e3=e PF b=bloc {For (n,e1,e2,n2,e3,b)}  
+| FOR PO t=typ n=ID EQUAL e1=e PV e2=e PV n2=ID EQUAL e3=e PF b=bloc {For (t,n,e1,e2,n2,e3,b)}
+| GOTO n=ID PV                      {Goto (n)}
+| n=ID DP                           {Label (n)}
 
-a :
-| n = ID            {Ident n}
-| MULT aff=a        {Deref aff}  
-| PO aff=a CO e1=e CF PF  {Access (aff, e1)}
 
 typ :
 | BOOL          {Bool}
 | INT           {Int}
 | RAT           {Rat}
 | t=typ MULT    {Pointeur t} 
-| t=typ TAB       {Tab t}
+| t=typ TAB     {Tab t}
 
 
 e : 
@@ -109,5 +114,6 @@ e :
 | NULL                    {Null} 
 | PO NEW t=typ CO e1=e CF PF   {NewTab (t,e1)}
 | AO lp=separated_list(VIRG,e) AF   {InitTab lp}
+
 
 

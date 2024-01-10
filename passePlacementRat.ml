@@ -29,6 +29,7 @@ let rec analyse_placement_instruction i depl reg =
     begin
     match info_ast_to_info info_ast with
     |InfoVar(_,t,_,_) ->
+      (*on place la variable en lui réserant sa place*)
       modifier_adresse_variable depl reg info_ast;
       AstPlacement.Declaration(info_ast, e), getTaille t
     | _ -> failwith("todo : pas une infoVar")
@@ -36,9 +37,11 @@ let rec analyse_placement_instruction i depl reg =
   |AstType.Conditionnelle (c,b1,b2) -> 
     let nb1 = analyse_placement_bloc b1 depl reg in
     let nb2 = analyse_placement_bloc b2 depl reg in
+    (*les conditionnelles ne demandent pas de place car elles ne sont pas stockées*)
     (AstPlacement.Conditionnelle (c, nb1, nb2),0)
   |AstType.TantQue (e,b) ->
     let il = analyse_placement_bloc b depl reg in
+    (*rien a placer*)
     AstPlacement.TantQue (e,il),0
   |AstType.Retour (e, info_ast) -> 
     begin
@@ -50,15 +53,32 @@ let rec analyse_placement_instruction i depl reg =
     | _  -> failwith ("pas une info fun")
     end
   |AstType.Affectation (a, e) -> 
+    (*rien a placer*)
     (AstPlacement.Affectation(analyse_placement_affectable a, e), 0)
   |AstType.AffichageBool  e -> 
+    (*rien a placer*)
     (AstPlacement.AffichageBool e, 0)
   |AstType.AffichageInt e -> 
+    (*rien a placer*)
     (AstPlacement.AffichageInt e, 0)
   |AstType.AffichageRat e -> 
+    (*rien a placer*)
     (AstPlacement.AffichageRat e, 0)
   |AstType.Empty ->
+    (*rien a placer*)
     (AstPlacement.Empty, 0)
+  |AstType.For (ia, e1, e2, e3, b) ->
+    (*Todo : rendre ca mieux*)
+      begin
+        match info_ast_to_info ia with
+        |InfoVar(_,_,_,_) ->
+          modifier_adresse_variable depl reg ia;
+          let li = analyse_placement_bloc b depl reg in
+          (*on reserve la place du variant de boucle*)
+          (AstPlacement.For (ia, e1, e2, e3, li), 1)
+        | _ -> failwith("todo : pas une infoVar")
+      end
+  | _ -> failwith("todo : étiquette pas encore implémenté") 
 
     and analyse_placement_affectable a =
       match a with

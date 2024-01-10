@@ -1,0 +1,7 @@
+main {
+    int i = 0;
+    for (int x = 0; (x<5); x = (x+1)){
+        i = (i+x);
+    }
+    print i;
+}

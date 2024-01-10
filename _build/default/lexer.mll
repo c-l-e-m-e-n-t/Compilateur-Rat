@@ -32,6 +32,7 @@
         "new",     NEW;
         "null",    NULL;
         "for",     FOR;
+        "goto",    GOTO;
       ];
     fun id ->
       match Hashtbl.find_opt kws id with
@@ -63,6 +64,7 @@ rule token = parse
 | "<"          { INF }
 | "&"          { AND }
 | "[]"         { TAB }
+| ":"          { DP }
 
 (* constantes entières *)
 | ("-")?['0'-'9']+ as i

@@ -19,12 +19,14 @@ type token =
   | INF
   | IF
   | ID of string
+  | GOTO
   | FOR
   | FALSE
   | EQUAL
   | EOF
   | ENTIER of int
   | ELSE
+  | DP
   | DENOM
   | CONST
   | CO

@@ -8,7 +8,51 @@ open Tam
 type t1 = Ast.AstPlacement.programme
 type t2 = string
 
+let rec getTailleTab e =
+  match e with
+  |AstType.Entier i -> i
+  |AstType.Booleen _ -> failwith "boolean"
+  |AstType.Unaire (_, _) -> failwith "unaire"
+  |AstType.Binaire (b,e1,e2) -> 
+    begin
+      match b with
+        |Fraction -> (getTailleTab e1) / (getTailleTab e2)
+        |PlusInt -> (getTailleTab e1) + (getTailleTab e2)
+        |MultInt -> (getTailleTab e1) * (getTailleTab e2)
+        |EquInt -> failwith "equint"
+        |EquBool -> failwith "equbool"
+        |Inf -> failwith "inf"
+        |PlusRat -> failwith "plusrat"
+        |MultRat -> failwith "multrat"
+    end
+  |AstType.AppelFonction (_, _) -> failwith "appel fonction"
+  |AstType.New _ -> failwith "new"
+  |AstType.Null -> failwith "null"
+  |AstType.Addr _ -> failwith "addr"
+  |AstType.NewTab (_, e) -> getTailleTab e
+  |AstType.InitTab le -> 
+    begin
+      match le with
+        |[] -> failwith "init tab"
+        |e::_ -> getTailleTab e
+    end
+  |AstType.Tab _ -> failwith "tab"
+  | _ -> failwith "autre"
 
+let rec getTypeFromExpr e =
+  match e with
+  |AstType.Entier _ -> Int
+  |AstType.Booleen _ -> Bool
+  |AstType.Unaire _ -> Rat
+  |AstType.Binaire _ -> Rat
+  |AstType.AppelFonction (info, _) -> getType info
+  |AstType.New t -> t
+  |AstType.Null -> failwith "null"
+  |AstType.Addr info -> getType info
+  |AstType.NewTab (t, _) -> t
+  |AstType.InitTab le -> getTypeFromExpr (List.hd le)
+  |AstType.Tab t -> t
+  | _ -> failwith "autre"
 
 (* analyser_code_expression : AstType.expression -> string *)
 (*Paramètre e : expression *)
@@ -63,32 +107,37 @@ let rec analyser_code_expression e =
   |AstType.Null -> 
     Tam.subr "MVoid"
 
-  |AstType.Affectable a -> 
+  |AstType.Affectation a -> 
     fst (analyse_code_affectable a)
 
   |AstType.Addr info -> 
     Tam.loadl_int (getAddr info)
 
-  | AstType.NewTab (t, e) ->
+  | AstType.NewTab (t, e) -> (*ca doit etre pas mal*)
     analyser_code_expression e ^              
     Tam.loadl_int (getTaille t) ^
     Tam.subr "IMul" ^
-    Tam.subr "MAlloc" ^                       
-    Tam.storei ((getTaille t)) ^                
-    Tam.loadl_int 1                          
+    Tam.subr "MAlloc"                   
 
-
-  | AstType.InitTab le ->
-      String.concat "" (List.map analyser_code_expression le)
+ 
+  | AstType.InitTab le ->(*ca doit etre pas mal*)
+      
+      let t = getTypeFromExpr (List.hd le) in
+      Tam.loadl_int (getTaille t) ^
+      Tam.loadl_int (List.length le) ^
+      Tam.subr "IMul" ^
+      Tam.subr "MAlloc" ^    
+      Tam.push 1 ^
+      String.concat "" (List.map analyser_code_expression le)^
+      Tam.storei ((getTaille t)*(List.length le)) 
 
   | AstType.Tab t ->
     begin
       match t with
         |Tab t2 -> 
-          Tam.loadl_int (getTaille t2) (*malloc*)
+          Tam.loadl_int (getTaille t2) 
         |_ -> failwith "ErrTab"
     end
-  | _ -> failwith "todo"
   
   (*Convertir un affectable en code TAM *)
 and analyse_code_affectable a =
@@ -110,10 +159,16 @@ and analyse_code_affectable a =
     end
   | AstType.Access (a, e) -> 
     let str, t = analyse_code_affectable a in
+    let str_e = analyser_code_expression e in
     begin
       match t with
         |Tab t2 -> 
-          str^analyser_code_expression e^Tam.loadi (getTaille t2), t2
+          str ^ 
+          str_e ^ 
+          Tam.loadl_int (getTaille t2) ^
+          Tam.subr "IMul" ^
+          Tam.subr "IAdd"^
+          Tam.loadi (getTaille t2), t2
         |_ -> failwith "Err"
     end
 
@@ -133,15 +188,20 @@ and analyse_code_affectable a =
             str^Tam.storei (getTaille t), t
           |_ -> failwith "Err"
         end
-    | AstPlacement.Access (a, e) ->
+    | AstPlacement.Access (a, e) -> 
       let str, t = analyse_code_affectable2 a in
+      let str_e = analyser_code_expression e in
       begin
         match t with
           |Tab t2 -> 
-            str^analyser_code_expression e^Tam.storei (getTaille t2), t2
+            str ^ 
+            str_e ^ 
+            Tam.loadl_int (getTaille t2) ^
+            Tam.subr "IMul" ^
+            Tam.subr "IAdd"^
+            Tam.loadi (getTaille t2), t2
           |_ -> failwith "Err"
       end
-
     
 (* analyser_code_instruction : AstPlacement.instruction -> string *)
 (*Paramètre i : instruction *)
@@ -163,12 +223,10 @@ let rec analyser_code_instruction i =
     begin 
       match a with 
       | AstPlacement.Ident info -> 
-        Tam.store (getTaille (getType info)) (getAddr info) (getReg info)
+        Tam.store (getTaille (getType info)) (getAddr info) (getReg info) 
       | AstPlacement.Deref _ -> fst (analyse_code_affectable2 a)
       | AstPlacement.Access _ -> fst (analyse_code_affectable2 a)
     end
-    
-
   |AstPlacement.TantQue (c, b) ->
     (*generer etiquette automatiquement*)
     let debut = Code.getEtiquette() in
@@ -203,6 +261,32 @@ let rec analyser_code_instruction i =
     Tam.return i1 i2
   |AstPlacement.Empty ->
     ""
+  (* Code tam des boucles for *)
+  |AstPlacement.For (ia, e1, e2, e3, li) -> 
+    (* création d'étiquettes pour boucler et sortir de la boucle*)
+    let debut = Code.getEtiquette() in
+    let fin = Code.getEtiquette() in
+    (match info_ast_to_info ia with
+    |InfoVar (_,t,depl,reg) -> 
+      (*initialiser le variant de boucle*)
+      let a = analyser_code_expression e1 in
+      Tam.push (getTaille t) ^ a ^ Tam.store (getTaille t) depl reg ^
+      (*commencer a boucler*)
+      debut ^ "\n" ^
+      (*verifier la condition*)
+      analyser_code_expression e2 ^
+      Tam.jumpif 0 fin ^
+      (*réaliser le contenu de la boucle*)
+      analyser_code_bloc li ^
+      (*incrémenter le variant de boucle*)
+      analyser_code_expression e3 ^
+      Tam.store (getTaille (getType ia)) (getAddr ia) (getReg ia) ^
+      (*retourner a debut de la boucle*)
+      Tam.jump debut ^
+      fin ^ "\n"
+    | _ -> failwith("aupfzbvzegv" ))
+  | _ -> failwith("Todo")
+    
   
 (* analyser_code_bloc : AstPlacement.bloc -> string *)
 (* Paramètre b : bloc *)

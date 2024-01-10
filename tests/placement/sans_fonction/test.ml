@@ -46,6 +46,8 @@ let pathFichiersRat = "../../../../../tests/placement/sans_fonction/fichiersRat/
 let%test "testPointeur3" = 
   test (pathFichiersRat^"testPointeur3.rat")  "main" ("x",1)  (1,"SB")  
 
+let%test "testFor" =
+  test (pathFichiersRat^"testFor.rat")  "main" ("x",1)  (0,"SB")
 
 let%test "testTab1" = 
   test (pathFichiersRat^"testTab1.rat")  "main" ("t",1)  (1,"SB")
