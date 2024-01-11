@@ -113,23 +113,21 @@ let rec analyser_code_expression e =
   |AstType.Addr info -> 
     Tam.loadl_int (getAddr info)
 
-  | AstType.NewTab (t, e) -> (*ca doit etre pas mal*)
-    analyser_code_expression e ^              
+  | AstType.NewTab (t, e) -> (*ca doit etre pas mal*)             
     Tam.loadl_int (getTaille t) ^
+    analyser_code_expression e ^  
     Tam.subr "IMul" ^
     Tam.subr "MAlloc"                   
 
  
   | AstType.InitTab le ->(*ca doit etre pas mal*)
-      
       let t = getTypeFromExpr (List.hd le) in
-      Tam.loadl_int (getTaille t) ^
-      Tam.loadl_int (List.length le) ^
-      Tam.subr "IMul" ^
-      Tam.subr "MAlloc" ^    
-      Tam.push 1 ^
-      String.concat "" (List.map analyser_code_expression le)^
-      Tam.storei ((getTaille t)*(List.length le)) 
+      analyser_code_expression (NewTab (t, Entier (List.length le))) ^
+      List.fold_right(fun e str -> e ^ str) (List.mapi (fun i e -> 
+        analyser_code_expression e 
+        ) le) "" ^
+ 
+        Tam.storei (getTaille t*(List.length le)) 
 
   | AstType.Tab t ->
     begin
@@ -285,7 +283,18 @@ let rec analyser_code_instruction i =
       Tam.jump debut ^
       fin ^ "\n"
     | _ -> failwith("aupfzbvzegv" ))
-  | _ -> failwith("Todo")
+  |AstPlacement.Goto info ->
+    begin
+    match info_ast_to_info info with
+      |InfoEtiquette n -> Tam.jump n
+      | _ -> failwith("pas une info etiquette" )
+    end
+  |AstPlacement.Label info ->
+    begin
+    match info_ast_to_info info with
+      |InfoEtiquette n -> n ^ "\n"
+      | _ -> failwith("pas une info etiquette" )
+    end
     
   
 (* analyser_code_bloc : AstPlacement.bloc -> string *)

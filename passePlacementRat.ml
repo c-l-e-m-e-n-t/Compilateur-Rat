@@ -78,7 +78,11 @@ let rec analyse_placement_instruction i depl reg =
           (AstPlacement.For (ia, e1, e2, e3, li), 1)
         | _ -> failwith("todo : pas une infoVar")
       end
-  | _ -> failwith("todo : étiquette pas encore implémenté") 
+  |AstType.Goto e -> 
+    (*rien a placer*)
+    (AstPlacement.Goto e, 0)
+  |AstType.Label e -> 
+    (AstPlacement.Label e, 1)
 
     and analyse_placement_affectable a =
       match a with

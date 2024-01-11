@@ -133,13 +133,13 @@ match e with
       let (naff, t) = analyse_type_affectable aff in
       let (ne, te) = analyse_type_expression e in
       begin
-      (*verification que l'on a bien un tableau et que l'expression est bien un int*)
+      (*verification que l'on a bien un tableau et que l'expression est bien un tableau*)
         match (naff, t) with
-        |naff, Tab tcase -> 
+        |naff, tcase -> 
           if est_compatible Int te then
             (AstType.Access(naff, ne), tcase) 
           else raise(TypeInattendu (t, te))
-        |_ -> raise(TypeInattendu (te, Int))
+        |_ -> raise(TypeInattendu (Tab t, te))
       end
 
 (* analyse_type_instruction : AstTds.instruction -> AstType.instruction *)
@@ -158,6 +158,9 @@ let rec analyse_type_instruction i =
     |Rat -> AstType.AffichageRat (ne)
     |Bool -> AstType.AffichageBool (ne)
     |Pointeur(_) -> AstType.AffichageInt(ne)
+    |Tab(Int) -> AstType.AffichageInt(ne)
+    |Tab(Rat) -> AstType.AffichageRat(ne)
+    |Tab(Bool) -> AstType.AffichageBool(ne)
     |ti -> raise(TypeInattendu (ti, te))
     end
 

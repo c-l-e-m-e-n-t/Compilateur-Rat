@@ -1,0 +1,8 @@
+main {
+    int a  = 40;
+    a = (a+1);
+    goto etiq;
+    a = 20;
+    etiq:
+    print a;
+}
