@@ -139,7 +139,6 @@ match e with
           if est_compatible Int te then
             (AstType.Access(naff, ne), tcase) 
           else raise(TypeInattendu (t, te))
-        |_ -> raise(TypeInattendu (Tab t, te))
       end
 
 (* analyse_type_instruction : AstTds.instruction -> AstType.instruction *)

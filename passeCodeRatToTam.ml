@@ -123,7 +123,7 @@ let rec analyser_code_expression e =
   | AstType.InitTab le ->(*ca doit etre pas mal*)
       let t = getTypeFromExpr (List.hd le) in
       analyser_code_expression (NewTab (t, Entier (List.length le))) ^
-      List.fold_right(fun e str -> e ^ str) (List.mapi (fun i e -> 
+      List.fold_right(fun e str -> e ^ str) (List.mapi (fun _ e -> 
         analyser_code_expression e 
         ) le) "" ^
  

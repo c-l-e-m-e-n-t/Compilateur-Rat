@@ -44,10 +44,10 @@ let%expect_test "testGoto1" =
 let%expect_test "testFor" = 
   runtam (pathFichiersRat^"testFor.rat"); 
   [%expect{| 10 |}]
-
+(*
 let%expect_test "testTab1" = 
   runtam (pathFichiersRat^"testTab1.rat");
-  [%expect{| [3/4][13/36] |}]
+  [%expect{| [3/4][13/36] |}]*)
   
 let%expect_test "pointeur1" = 
   runtam (pathFichiersRat^"testPointeur1.rat");

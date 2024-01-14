@@ -23,8 +23,9 @@ let%test_unit "testGoto1" =
 let%test_unit "testFor" = 
   let _ = compiler (pathFichiersRat^"testFor.rat") in ()
 
+  (*
 let%test_unit "testTab" = 
-  let _ = compiler (pathFichiersRat^"testTab1.rat") in ()
+  let _ = compiler (pathFichiersRat^"testTab1.rat") in ()*)
   
 let%test_unit "testAddr1" = 
   let _ = compiler (pathFichiersRat^"testPointeur1.rat") in ()

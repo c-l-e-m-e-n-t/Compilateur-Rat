@@ -1,3 +1,11 @@
+int somme (int a){
+    int c = 0;
+    for (int x = 0; (x<a); x = (x+1)){
+        c = (c+1);
+    }
+    return (c);
+}
+
 main {
     for (int x = 0; (x<5); x = (x+1)){
         print x;
