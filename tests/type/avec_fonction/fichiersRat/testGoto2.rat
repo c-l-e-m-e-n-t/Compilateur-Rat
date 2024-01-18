@@ -1,9 +1,15 @@
+int test (int a){
+    goto etiq;
+    const b = 40; 
+    etiq :
+}
+
 main {
     const a = 40; 
     goto etiq;
     if(a < 5) {
         etiq : 
-        print 10;
+        print a;
     }
     else {
         print a;

@@ -20,8 +20,29 @@ let%test_unit "testPointeur3" =
 let%test_unit "testGoto1" = 
   let _ = compiler (pathFichiersRat^"testGoto1.rat") in ()
 
+let%test_unit "testGoto2" = 
+  let _ = compiler (pathFichiersRat^"testGoto2.rat") in ()
+
+let%test_unit "testGoto3" =
+  let _ = compiler (pathFichiersRat^"testGoto3.rat") in ()
+
+let%test_unit "testGoto4" = 
+  let _ = compiler (pathFichiersRat^"testGoto4.rat") in ()
+
 let%test_unit "testFor" = 
   let _ = compiler (pathFichiersRat^"testFor.rat") in ()
+
+let%test_unit "testFor2" =
+  let _ = compiler (pathFichiersRat^"testFor2.rat") in ()
+
+let%test_unit "testFor3" =
+  let _ = compiler (pathFichiersRat^"testFor3.rat") in ()
+
+let%test_unit "testFor4" =
+  let _ = compiler (pathFichiersRat^"testFor4.rat") in ()
+
+let%test_unit "testFor5" =
+  let _ = compiler (pathFichiersRat^"testFor5.rat") in ()
 
   (*
 let%test_unit "testTab" = 

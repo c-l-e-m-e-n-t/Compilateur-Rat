@@ -1,5 +1,6 @@
 main {
-    for (int x = 0; (x<5); x = (x+1)){
+    int i = 5;
+    for (int x = 0; (x<i); x = (x+1)){
         print x;
     }
 }

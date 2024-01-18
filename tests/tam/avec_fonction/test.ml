@@ -30,6 +30,27 @@ let pathFichiersRat = "../../../../../tests/tam/avec_fonction/fichiersRat/"
 (**********)
 (*  TESTS *)
 (**********)
+
+let%expect_test "testCombinaison" =
+  runtam (pathFichiersRat^"testCombinaison.rat");
+  [%expect{| 55 |}]
+
+let%expect_test "testFor" =
+  runtam (pathFichiersRat^"testFor.rat");
+  [%expect{| 15 |}]
+
+let%expect_test "testFor2" =
+  runtam (pathFichiersRat^"testFor2.rat");
+  [%expect{| 6 |}]
+
+let %expect_test "testGoto1" =
+  runtam (pathFichiersRat^"testGoto1.rat");
+  [%expect{| 40 |}]
+
+let %expect_test "testGoto2" =
+  runtam (pathFichiersRat^"testGoto2.rat");
+  [%expect{| 10 |}]
+
 let%expect_test "testPointeur3" = 
   runtam (pathFichiersRat^"testPointeur3.rat"); 
   [%expect{| 423 |}]

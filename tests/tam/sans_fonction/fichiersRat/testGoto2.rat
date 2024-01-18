@@ -1,12 +1,12 @@
 main {
     int a = 40; 
-    goto etiq;
     if(a < 5) {
-        etiq : 
         a = 10;
+        etiq : 
     }
     else {
-        a = 220;
+        a = 25;
+        goto etiq;
     }
     print a;
 }

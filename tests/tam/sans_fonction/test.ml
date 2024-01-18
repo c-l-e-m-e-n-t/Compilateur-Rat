@@ -39,11 +39,35 @@ let%expect_test "testPointeur3" =
 
 let%expect_test "testGoto1" = 
   runtam (pathFichiersRat^"testGoto1.rat"); 
-  [%expect{| 41 |}]
+  [%expect{| 10 |}]
+
+let%expect_test "testGoto2" =
+  runtam (pathFichiersRat^"testGoto2.rat");
+  [%expect{| 25 |}]
+
+let%expect_test "testGoto3" =
+  runtam (pathFichiersRat^"testGoto3.rat");
+  [%expect{| 40 |}]
 
 let%expect_test "testFor" = 
   runtam (pathFichiersRat^"testFor.rat"); 
-  [%expect{| 10 |}]
+  [%expect{| 01234 |}]
+
+let%expect_test "testFor2" =
+  runtam (pathFichiersRat^"testFor2.rat");
+  [%expect{| 01234 |}]
+
+let%expect_test "testFor3" =
+  runtam (pathFichiersRat^"testFor3.rat");
+  [%expect{| 1248 |}]
+
+let%expect_test "testFor4" =
+  runtam (pathFichiersRat^"testFor4.rat");
+  [%expect{| 24816 |}]
+
+let%expect_test "testFor5" =
+  runtam (pathFichiersRat^"testFor5.rat");
+  [%expect{| 8 |}]
 (*
 let%expect_test "testTab1" = 
   runtam (pathFichiersRat^"testTab1.rat");

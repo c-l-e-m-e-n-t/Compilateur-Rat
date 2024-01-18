@@ -1,0 +1,19 @@
+int somme (int a){
+    int c = 0;
+    for (int x = 0; (x<(a+1)); x = (x+1)){
+        c = (c+x);
+    }
+    return (c);
+}
+
+main {
+    int * px = (new int);
+    int x = 10;
+    int y = 0;
+    y = somme(x);
+    px = &y;
+    goto haha;
+    px = &x;
+    haha:
+    print *px;
+}

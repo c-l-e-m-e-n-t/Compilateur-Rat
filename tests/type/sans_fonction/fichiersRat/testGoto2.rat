@@ -1,11 +1,11 @@
 main {
     const a = 40; 
-    goto etiq;
     if(a < 5) {
         etiq : 
         print 10;
     }
     else {
         print a;
+        goto etiq;
     }
 }

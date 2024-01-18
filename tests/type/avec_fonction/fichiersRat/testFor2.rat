@@ -1,0 +1,11 @@
+int factorielle (int a){
+    int c = 0;
+    for (int x = 0; (x<a); x = (x+1)){
+        c = (c*x);
+    }
+    return (c);
+}
+
+main {
+    print factorielle (3);
+}

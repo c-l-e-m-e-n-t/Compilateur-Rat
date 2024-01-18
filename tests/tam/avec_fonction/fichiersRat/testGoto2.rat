@@ -1,3 +1,9 @@
+int test (int a){
+    goto etiq2;
+    const b = 40; 
+    etiq2 :
+}
+
 main {
     const a = 40; 
     goto etiq;
